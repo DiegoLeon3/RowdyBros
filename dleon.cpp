@@ -6,6 +6,6 @@ void show_my_creds(int n, int m) {
         r.bot = n;
         r.left = m;
         r.center = 1;
-        ggprint8b(&r, 16, 0x00ff0000, "Ed did some work on the github");
+        ggprint8b(&r, 16, 0x00ff0000, "Diego did some work on github");
 
 }
