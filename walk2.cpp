@@ -25,6 +25,9 @@
 //#include "ppm.h"
 #include "fonts.h"
 #include "sabdulrazzak.cpp"
+#include "dleon.cpp"
+#include "ekyles.cpp"
+#include "jmedina2.cpp"
 
 //defined types
 typedef double Flt;
@@ -937,6 +940,9 @@ void render(void)
 	glEnd();
 	glPopMatrix();
         show_my_creds(gl.yres / 2, gl.xres / 2);
+        show_ed_creds((gl.yres / 2) + 15 , gl.xres / 2);
+        show_diego_creds((gl.yres / 2) + 30 , gl.xres / 2);
+        show_javier_creds((gl.yres / 2) + 45 , gl.xres / 2);
     }
 
 	//if (gl.movie) {

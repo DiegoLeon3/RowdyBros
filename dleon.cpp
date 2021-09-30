@@ -1,6 +1,6 @@
 #include "fonts.h"
 
-void show_my_creds(int n, int m) {
+void show_diego_creds(int n, int m) {
         
         Rect r;
         r.bot = n;

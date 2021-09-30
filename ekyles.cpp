@@ -1,6 +1,6 @@
 #include "fonts.h"
 
-void show_my_creds(int n, int m) {
+void show_ed_creds(int n, int m) {
 	//establish centering 
 	//using yres and xres
 	//
