@@ -24,6 +24,7 @@
 #include "log.h"
 //#include "ppm.h"
 #include "fonts.h"
+#include "sabdulrazzak.cpp"
 
 //defined types
 typedef double Flt;
@@ -102,6 +103,7 @@ public:
 	int xres, yres;
 	int movie, movieStep;
 	int walk;
+    int creds;
 	int walkFrame;
 	double delay;
 	Image *walkImage;
@@ -120,6 +122,7 @@ public:
 		logOpen();
 		camera[0] = camera[1] = 0.0;
 		movie=0;
+        creds=0;
 		movieStep=2;
 		xres=800;
 		yres=600;
@@ -584,6 +587,9 @@ int checkKeys(XEvent *e)
 			break;
 		case XK_Up:
 			break;
+        case XK_c:
+            gl.creds = 1;
+            break;
 		case XK_Down:
 			break;
 		case XK_equal:
@@ -712,6 +718,7 @@ void physics(void)
 	}
 	gl.ball_pos[1] += gl.ball_vel[1];
 }
+
 
 void render(void)
 {
@@ -918,9 +925,23 @@ void render(void)
 	ggprint8b(&r, 16, c, "right arrow -> walk right");
 	ggprint8b(&r, 16, c, "left arrow  <- walk left");
 	ggprint8b(&r, 16, c, "frame: %i", gl.walkFrame);
-	if (gl.movie) {
-		screenCapture();
-	}
+	ggprint8b(&r, 16, c, "Press C for credits");
+
+    if(gl.creds){
+    glColor3f(0.0,0.0,0.0);
+    glBegin(GL_QUADS);
+		glVertex2i(-gl.xres, gl.yres);
+		glVertex2i(-gl.xres, -gl.yres);
+		glVertex2i( gl.xres, -gl.yres);
+		glVertex2i( gl.xres, gl.yres);
+	glEnd();
+	glPopMatrix();
+        show_my_creds(gl.yres / 2, gl.xres / 2);
+    }
+
+	//if (gl.movie) {
+	//	screenCapture();
+	//}
 }
 
 
