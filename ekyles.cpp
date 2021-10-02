@@ -1,3 +1,7 @@
+// Edward Kyles
+// Software Engineering
+// 10/1/21
+
 #include "fonts.h"
 
 void show_ed_creds(int n, int m) {
