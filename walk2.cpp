@@ -591,7 +591,7 @@ int checkKeys(XEvent *e)
 		case XK_Up:
 			break;
         case XK_c:
-            gl.creds = 1;
+            gl.creds ^= 1;
             break;
 		case XK_Down:
 			break;
