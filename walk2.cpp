@@ -107,6 +107,7 @@ public:
 	int movie, movieStep;
 	int walk;
     int creds;
+    int title;
 	int walkFrame;
 	double delay;
 	Image *walkImage;
@@ -126,6 +127,7 @@ public:
 		camera[0] = camera[1] = 0.0;
 		movie=0;
         creds=0;
+        title=0;
 		movieStep=2;
 		xres=800;
 		yres=600;
@@ -167,7 +169,7 @@ public:
 		ftsz[1] = (Flt)tilesize[1];
 		tile_base = 220.0;
 		//read level
-		FILE *fpi = fopen("level1.txt","r");
+		FILE *fpi = fopen("level1test.txt","r");
 		if (fpi) {
 			nrows=0;
 			char line[100];
@@ -338,7 +340,7 @@ public:
 	}
 };
 Image img[3] = {
-"./images/walk.gif",
+"./images/runner90.gif",
 "./images/exp.png",
 "./images/exp44.png" };
 
@@ -545,7 +547,7 @@ int checkKeys(XEvent *e)
 	static int shift=0;
 	if (e->type != KeyPress && e->type != KeyRelease)
 		return 0;
-	int key = XLookupKeysym(&e->xkey, 0);
+	int key = XLookupKeysym(&e->xkey, 0); 
 	gl.keys[key]=1;
 	if (e->type == KeyRelease) {
 		gl.keys[key]=0;
@@ -593,7 +595,10 @@ int checkKeys(XEvent *e)
         case XK_c:
             gl.creds ^= 1;
             break;
-		case XK_Down:
+	    case XK_p:
+            gl.title ^= 1;
+            break;
+        case XK_Down:
 			break;
 		case XK_equal:
 			gl.delay -= 0.005;
@@ -728,25 +733,29 @@ void render(void)
 	Rect r;
 	//Clear the screen
 	glClearColor(0.1, 0.1, 0.1, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT);
-	float cx = gl.xres/2.0;
+	
+    glClear(GL_COLOR_BUFFER_BIT);
+    float cx = gl.xres/2.0;
 	float cy = gl.yres/2.0;
-	//
+
+
 	//show ground
 	glBegin(GL_QUADS);
-		glColor3f(0.2, 0.2, 0.2);
+		//glColor3f(0.2, 0.2, 0.2);
 		glVertex2i(0,       220);
 		glVertex2i(gl.xres, 220);
-		glColor3f(0.4, 0.4, 0.4);
+		//glColor3f(0.4, 0.4, 0.4);
 		glVertex2i(gl.xres,   0);
 		glVertex2i(0,         0);
 	glEnd();
+    
 	//
 	//show boxes as background
 	for (int i=0; i<20; i++) {
 		glPushMatrix();
 		glTranslated(gl.box[i][0],gl.box[i][1],gl.box[i][2]);
-		glColor3f(0.2, 0.2, 0.2);
+        //changing color to blue 
+		glColor3f(0, 0, 255);
 		glBegin(GL_QUADS);
 			glVertex2i( 0,  0);
 			glVertex2i( 0, 30);
@@ -759,7 +768,8 @@ void render(void)
 	//========================
 	//Render the tile system
 	//========================
-	int tx = lev.tilesize[0];
+	
+    int tx = lev.tilesize[0];
 	int ty = lev.tilesize[1];
 	Flt dd = lev.ftsz[0];
 	Flt offy = lev.tile_base;
@@ -820,6 +830,7 @@ void render(void)
 		glVertex2i( 10, 0);
 	glEnd();
 	glPopMatrix();
+    
 	//--------------------------------------
 	//
 	//#define SHOW_FAKE_SHADOW
@@ -832,9 +843,10 @@ void render(void)
 		glVertex2i(cx-60, 130);
 	glEnd();
 	#endif
+	
+    //
 	//
-	//
-	float h = 200.0;
+    float h = 200.0;
 	float w = h * 0.5;
 	glPushMatrix();
 	glColor3f(1.0, 1.0, 1.0);
@@ -892,8 +904,8 @@ void render(void)
 		glDisable(GL_ALPHA_TEST);
 	}
 	//
-	//
-	if (gl.exp44.onoff) {
+	//explosion
+	 if (gl.exp44.onoff) {
 		h = 80.0;
 		w = 80.0;
 		glPushMatrix();
@@ -929,7 +941,20 @@ void render(void)
 	ggprint8b(&r, 16, c, "left arrow  <- walk left");
 	ggprint8b(&r, 16, c, "frame: %i", gl.walkFrame);
 	ggprint8b(&r, 16, c, "Press C for credits");
-
+    
+    
+    if(!gl.title){
+    glColor3f(0.0,0.0,1.0);
+    glBegin(GL_QUADS);
+		glVertex2i(-gl.xres, gl.yres);
+		glVertex2i(-gl.xres, -gl.yres);
+		glVertex2i( gl.xres, -gl.yres);
+		glVertex2i( gl.xres, gl.yres);
+	glEnd();
+	glPopMatrix();
+        show_title(gl.yres / 2, gl.xres / 2);
+    } 
+    //credit screen 
     if(gl.creds){
     glColor3f(0.0,0.0,0.0);
     glBegin(GL_QUADS);
