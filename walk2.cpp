@@ -104,6 +104,14 @@ public:
 	}
 };
 
+class Texture {
+  public:
+      Image *backImage;
+      GLuint backTexture;
+      float xc[2];
+      float yc[2];
+  };
+
 class Global {
 public:
 	unsigned char keys[65536];
@@ -121,12 +129,12 @@ public:
     //Adding background Texture for title screen
 	Image *backgroundImage;
     GLuint backgroundTexture; 
+    
 
     //Adding background texture for main screen 
-	Image *scrollingImage;
-    GLuint scrollingTexture;
-    float xc[2]; 
-    float yc[2];
+	Texture scrollingTexture;
+   // Image *scrollingImage;
+    //GLuint scrollingTexture;
     //////////
 	
     Vec box[20];
@@ -452,7 +460,7 @@ void initOpengl(void)
      
      glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h,0, GL_RGB, GL_UNSIGNED_BYTE, img[2].data);
      //-------------------------------------------
-    
+   /* 
     ////Main Screen Set-up 
     glGenTextures(1, &gl.scrollingTexture);
     w = img[3].width; 
@@ -465,8 +473,21 @@ void initOpengl(void)
      
      glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h,0, GL_RGB, GL_UNSIGNED_BYTE, img[3].data);
      //-------------------------------------------
-    
-    
+    */
+     gl.scrollingTexture.backImage = &img[3];
+     //create opengl texture elements
+     glGenTextures(1, &gl.scrollingTexture.backTexture);
+      w = gl.scrollingTexture.backImage->width;
+      h = gl.scrollingTexture.backImage->height;
+     glBindTexture(GL_TEXTURE_2D, gl.scrollingTexture.backTexture);
+     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+     glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0,
+                             GL_RGB, GL_UNSIGNED_BYTE, gl.scrollingTexture.backImage->data);
+     gl.scrollingTexture.xc[0] = 0.0;
+     gl.scrollingTexture.xc[1] = 0.25;
+     gl.scrollingTexture.yc[0] = 0.0;
+     gl.scrollingTexture.yc[1] = 1.0;
     ////////////////////////////////////////////////////
     
     
@@ -723,6 +744,9 @@ void physics(void)
 		}
 		for (int i=0; i<20; i++) {
 			if (gl.keys[XK_Left]) {
+                //edit this to inscrease sprite speed
+                gl.scrollingTexture.xc[0] -= 0.0001;
+                gl.scrollingTexture.xc[1] -= 0.0001;
 				gl.box[i][0] += 1.0 * (0.05 / gl.delay);
 				if (gl.box[i][0] > gl.xres + 10.0)
 					gl.box[i][0] -= gl.xres + 10.0;
@@ -730,6 +754,8 @@ void physics(void)
 				if (gl.camera[0] < 0.0)
 					gl.camera[0] = 0.0;
 			} else {
+                gl.scrollingTexture.xc[0] += 0.0001;
+                gl.scrollingTexture.xc[1] += 0.0001;
 				gl.box[i][0] -= 1.0 * (0.05 / gl.delay);
 				if (gl.box[i][0] < -10.0)
 					gl.box[i][0] += gl.xres + 10.0;
@@ -811,7 +837,8 @@ void render(void)
     float cx = gl.xres/2.0;
 	float cy = gl.yres/2.0;
     //show background/////////////
-    show_background(gl.yres, gl.xres, gl.scrollingTexture);
+    show_background(gl.yres, gl.xres, gl.scrollingTexture.backTexture
+            ,gl.scrollingTexture.xc, gl.scrollingTexture.yc);
 
 /*
 //////////////////////
