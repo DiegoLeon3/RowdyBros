@@ -118,16 +118,8 @@ public:
 	GLuint walkTexture;
 //declationg the bacground and its texture 
     int backgroundFrame;
-    //Adding background Texture for title screen
-	Image *backgroundImage;
+    //Adding background Texture 
     GLuint backgroundTexture; 
-
-    //Adding background texture for main screen 
-	Image *scrollingImage;
-    GLuint scrollingTexture;
-    float xc[2]; 
-    float yc[2];
-    //////////
 	
     Vec box[20];
 	Sprite exp;
@@ -151,8 +143,7 @@ public:
 		walk=0;
 		walkFrame=0;
 		walkImage=NULL;
-        backgroundFrame = 0;
-        backgroundImage=NULL;
+
 
 		MakeVector(ball_pos, 520.0, 0, 0);
 		MakeVector(ball_vel, 0, 0, 0);
@@ -359,12 +350,11 @@ public:
 			unlink(ppmname);
 	}
 };
-Image img[4] = {
+Image img[3] = {
 "./images/walk.gif",
 "./images/exp.png",
-"./images/titleScreen.png",
-"./images/scrollingBackground.jpg",
-};
+//"./images/exp44.png",
+"./images/background.png"};
 
 
 int main(void)
@@ -440,31 +430,20 @@ void initOpengl(void)
 	initialize_fonts();
 	
     ////////////////////////////////////////////////////
-   ///Title Screen background set up  
+    
    glGenTextures(1, &gl.backgroundTexture);
-   int w = img[2].width; 
-   int h = img[2].height; 
+   int w = img[3].width; 
+   int h = img[3].height; 
     
     glBindTexture(GL_TEXTURE_2D, gl.backgroundTexture);
-    //unsigned char* ftData = buildAlphaData(&img[2]); 
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
      glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-     
-     glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h,0, GL_RGB, GL_UNSIGNED_BYTE, img[2].data);
+	unsigned char *backgroundData = buildAlphaData(&img[0]);	
+     glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h,0, GL_RGB, GL_UNSIGNED_BYTE, backgroundData);
+	free(backgroundData);
      //-------------------------------------------
     
-    ////Main Screen Set-up 
-    glGenTextures(1, &gl.scrollingTexture);
-    w = img[3].width; 
-    h = img[3].height; 
     
-    glBindTexture(GL_TEXTURE_2D, gl.scrollingTexture);
-    //unsigned char* ftData = buildAlphaData(&img[2]); 
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-     
-     glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h,0, GL_RGB, GL_UNSIGNED_BYTE, img[3].data);
-     //-------------------------------------------
     
     
     ////////////////////////////////////////////////////
@@ -702,13 +681,6 @@ Flt VecNormalize(Vec vec)
 
 void physics(void)
 {
-
-    //to move backgriund when player is in motion 
-    //if(player in motion){
-    //  gl.walk.xc[0]
-    // 
-    //}
-
 	if (gl.walk || gl.keys[XK_Right] || gl.keys[XK_Left]) {
 		//man is walking...
 		//when time is up, advance the frame.
@@ -805,15 +777,27 @@ void render(void)
 {
 	Rect r;
 	//Clear the screen
-	glClearColor(1.0, 1.0, 1.0, 1.0);
+	glClearColor(0.1, 0.1, 0.1, 1.0);
 	
     glClear(GL_COLOR_BUFFER_BIT);
     float cx = gl.xres/2.0;
 	float cy = gl.yres/2.0;
     //show background/////////////
-    show_background(gl.yres, gl.xres, gl.scrollingTexture);
+ 
+      glColor3f(1.0, 1.0, 1.0);
+    show_background_screen(gl.backgroundTexture);
 
-/*
+    
+     /* glBindTexture(GL_TEXTURE_2D, gl.walkTexture);
+     glBegin(GL_QUADS);
+         glTexCoord2f(0.0f, 1.0f); glVertex2i(0, 0);
+         glTexCoord2f(0.0f, 0.0f); glVertex2i(0, gl.yres);
+         glTexCoord2f(1.0f, 0.0f); glVertex2i(gl.xres, gl.yres);
+         glTexCoord2f(1.0f, 1.0f); glVertex2i(gl.xres, 0);
+     glEnd();
+*/
+
+
 //////////////////////
 	//show ground
 	glBegin(GL_QUADS);
@@ -839,7 +823,7 @@ void render(void)
 			glVertex2i(20,  0);
 		glEnd();
 		glPopMatrix();
-	}*/
+	}
 	//
 	//========================
 	//Render the tile system
@@ -1041,7 +1025,7 @@ void render(void)
 		glVertex2i( gl.xres, gl.yres);
 	glEnd();
 	glPopMatrix();
-        show_title(gl.yres, gl.xres, gl.backgroundTexture);
+        show_title(gl.yres / 2, gl.xres / 2);
     } 
     //credit screen 
     if(gl.creds){

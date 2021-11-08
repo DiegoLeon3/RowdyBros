@@ -30,7 +30,7 @@ void show_ed_creds(int n, int m) {
 }
 
 
-void show_title(int yres, int xres,GLuint backgroundTexture ) {
+void show_title(int yres, int xres,GLunit backgroundTexture ) {
 	//establish centering 
 	//using yres and xres
 	//
@@ -41,11 +41,11 @@ void show_title(int yres, int xres,GLuint backgroundTexture ) {
 	//print the creds
 	ggprint8b(&r, 16, 0xffff00, "Press P to Play");
      glColor3f(1.0, 1.0, 1.0);
-       glBindTexture(GL_TEXTURE_2D, backgroundTexture);
+       glBindTexture(GL_TEXTURE_2D, gl.backgroundTexture);
        glBegin(GL_QUADS);
            glTexCoord2f(0.0f, 1.0f); glVertex2i(0, 0);
-           glTexCoord2f(0.0f, 0.0f); glVertex2i(0, yres);
-           glTexCoord2f(1.0f, 0.0f); glVertex2i(xres, yres);
-           glTexCoord2f(1.0f, 1.0f); glVertex2i(xres, 0);
+           glTexCoord2f(0.0f, 0.0f); glVertex2i(0, gl.yres);
+           glTexCoord2f(1.0f, 0.0f); glVertex2i(gl.xres, gl.yres);
+           glTexCoord2f(1.0f, 1.0f); glVertex2i(gl.xres, 0);
        glEnd();
 }
