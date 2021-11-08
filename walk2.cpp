@@ -151,7 +151,6 @@ public:
 		logOpen();
 		camera[0] = camera[1] = 0.0;
 		movie=0;
-        creds=0;
         title=0;
 		movieStep=2;
 		xres=800;
@@ -247,7 +246,7 @@ public:
 	void setTitle() {
 		//Set the window title bar.
 		XMapWindow(dpy, win);
-		XStoreName(dpy, win, "3350 - Walk Cycle");
+		XStoreName(dpy, win, "Rowdy Bros.");
 	}
 	void setupScreenRes(const int w, const int h) {
 		gl.xres = w;
@@ -662,14 +661,9 @@ int checkKeys(XEvent *e)
 			timers.recordTime(&gl.exp.time);
 			gl.exp.onoff ^= 1;
 			break;
-		case XK_f:
-			gl.exp44.pos[0] = 200.0;
-			//gl.exp44.pos[1] = -60.0;
-			//gl.exp44.pos[2] =   0.0;
-			//timers.recordTime(&gl.exp44.time);
-			gl.exp44.onoff ^= 1;
-			break;
 		case XK_Left:
+			break;
+		case XK_f:
 			break;
 		case XK_Right:
 			break;
@@ -753,7 +747,8 @@ void physics(void)
 				gl.camera[0] -= 2.0/lev.tilesize[0] * (0.05 / gl.delay);
 				if (gl.camera[0] < 0.0)
 					gl.camera[0] = 0.0;
-			} else {
+			} 
+           if(gl.keys[XK_Right]) {
                 gl.scrollingTexture.xc[0] += 0.0001;
                 gl.scrollingTexture.xc[1] += 0.0001;
 				gl.box[i][0] -= 1.0 * (0.05 / gl.delay);
@@ -763,6 +758,33 @@ void physics(void)
 				if (gl.camera[0] < 0.0)
 					gl.camera[0] = 0.0;
 			}
+            //
+
+           if(gl.keys[XK_Right] && gl.keys[XK_f]) {
+                gl.scrollingTexture.xc[0] += 0.001;
+                gl.scrollingTexture.xc[1] += 0.001;
+				gl.box[i][0] -= 1.0 * (0.05 / gl.delay);
+				if (gl.box[i][0] < -10.0)
+					gl.box[i][0] += gl.xres + 10.0;
+				gl.camera[0] += 2.0/lev.tilesize[0] * (0.05 / gl.delay);
+				if (gl.camera[0] < 0.0)
+					gl.camera[0] = 0.0;
+			}
+
+
+           if(gl.keys[XK_Left] && gl.keys[XK_f]) {
+                gl.scrollingTexture.xc[0] -= 0.001;
+                gl.scrollingTexture.xc[1] -= 0.001;
+				gl.box[i][0] -= 1.0 * (0.05 / gl.delay);
+				if (gl.box[i][0] < -10.0)
+					gl.box[i][0] += gl.xres + 10.0;
+				gl.camera[0] += 2.0/lev.tilesize[0] * (0.05 / gl.delay);
+				if (gl.camera[0] < 0.0)
+					gl.camera[0] = 0.0;
+			}
+
+
+//
 		}
 		if (gl.exp.onoff) {
 			gl.exp.pos[0] -= 2.0 * (0.05 / gl.delay);
@@ -1049,11 +1071,11 @@ void render(void)
 	r.bot = gl.yres - 20;
 	r.left = 10;
 	r.center = 0;
-	ggprint8b(&r, 16, c, "W   Walk cycle");
 	ggprint8b(&r, 16, c, "E   Explosion");
 	ggprint8b(&r, 16, c, "+   faster");
 	ggprint8b(&r, 16, c, "-   slower");
 	ggprint8b(&r, 16, c, "right arrow -> walk right");
+	ggprint8b(&r, 16, c, "right arrow + f -> walk faster");
 	ggprint8b(&r, 16, c, "left arrow  <- walk left");
 	ggprint8b(&r, 16, c, "frame: %i", gl.walkFrame);
 	ggprint8b(&r, 16, c, "Press C for credits");
