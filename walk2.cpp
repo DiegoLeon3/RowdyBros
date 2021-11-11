@@ -1,8 +1,8 @@
 //3350
 //program: walk2.cpp
-//author:  Gordon Griesel
-//date:    summer 2017
-//         spring 2018
+//original author:  Gordon Griesel
+//name: Edward Kyles
+//date:    fall 21
 //
 //Walk cycle using a sprite sheet.
 //images courtesy: http://games.ucla.edu/resource/walk-cycles/
@@ -129,7 +129,11 @@ public:
     //Adding background Texture for title screen
 	Image *backgroundImage;
     GLuint backgroundTexture; 
-    
+
+//declaring the coin
+     int coinFrame;
+     Image *coinImage;
+     GLuint coinTexture;    
 
     //Adding background texture for main screen 
 	Texture scrollingTexture;
@@ -160,6 +164,9 @@ public:
 		walkImage=NULL;
         backgroundFrame = 0;
         backgroundImage=NULL;
+        
+        coinFrame = 0;
+        coinImage = NULL;
 
 		MakeVector(ball_pos, 520.0, 0, 0);
 		MakeVector(ball_vel, 0, 0, 0);
@@ -366,11 +373,12 @@ public:
 			unlink(ppmname);
 	}
 };
-Image img[4] = {
+Image img[5] = {
 "./images/walk.gif",
 "./images/exp.png",
 "./images/titleScreen.png",
 "./images/scrollingBackground.jpg",
+"./images/coin8bit.png",
 };
 
 
@@ -459,7 +467,21 @@ void initOpengl(void)
      
      glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h,0, GL_RGB, GL_UNSIGNED_BYTE, img[2].data);
      //-------------------------------------------
-   /* 
+    
+    //----------------------------------------------------------- 
+    //Coin image setup
+    glGenTextures(1, &gl.coinTexture);
+    w = img[4].width;
+    h = img[4].height;
+    glBindTexture(GL_TEXTURE_2D, gl.coinTexture);
+    //unsigned char* ftData = buildAlphaData(&img[2]); 
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+     
+     glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h,0, GL_RGB, GL_UNSIGNED_BYTE, img[4].data);
+    
+
+    /* 
     ////Main Screen Set-up 
     glGenTextures(1, &gl.scrollingTexture);
     w = img[3].width; 
@@ -520,8 +542,8 @@ void initOpengl(void)
 
     //-------------------------------------------------------------------------
 	//create opengl texture elements
-	w = img[1].width;
-	h = img[1].height;
+	w = img[2].width;
+	h = img[2].height;
 	glGenTextures(1, &gl.exp.tex);
 	//-------------------------------------------------------------------------
 	//this is similar to a sprite graphic
@@ -529,14 +551,14 @@ void initOpengl(void)
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
 	//must build a new set of data...
-	unsigned char *xData = buildAlphaData(&img[1]);	
+	unsigned char *xData = buildAlphaData(&img[2]);	
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0,
 		GL_RGBA, GL_UNSIGNED_BYTE, xData);
 	free(xData);
 	
     //-------------------------------------------------------------------------
-	w = img[2].width;
-	h = img[2].height;
+	w = img[1].width;
+	h = img[1].height;
 	//create opengl texture elements
 	glGenTextures(1, &gl.exp44.tex);
 	//-------------------------------------------------------------------------
@@ -545,7 +567,7 @@ void initOpengl(void)
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
 	//must build a new set of data...
-	xData = buildAlphaData(&img[2]);
+	xData = buildAlphaData(&img[1]);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0,
 		GL_RGBA, GL_UNSIGNED_BYTE, xData);
 	free(xData);
@@ -1011,62 +1033,15 @@ void render(void)
     
 	//
 	if (gl.exp.onoff) {
-		h = 80.0;
-		w = 80.0;
-		glPushMatrix();
-		glColor3f(1.0, 1.0, 1.0);
-		glBindTexture(GL_TEXTURE_2D, gl.exp.tex);
-		glEnable(GL_ALPHA_TEST);
-		glAlphaFunc(GL_GREATER, 0.0f);
-		glColor4ub(255,255,255,255);
-		glTranslated(gl.exp.pos[0], gl.exp.pos[1], gl.exp.pos[2]);
-		int ix = gl.exp.frame % 5;
-		int iy = gl.exp.frame / 5;
-		float tx = (float)ix / 5.0;
-		float ty = (float)iy / 5.0;
-		glBegin(GL_QUADS);
-			glTexCoord2f(tx,     ty+0.2); glVertex2i(cx-w, cy-h);
-			glTexCoord2f(tx,     ty);     glVertex2i(cx-w, cy+h);
-			glTexCoord2f(tx+0.2, ty);     glVertex2i(cx+w, cy+h);
-			glTexCoord2f(tx+0.2, ty+0.2); glVertex2i(cx+w, cy-h);
-		glEnd();
-		glPopMatrix();
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glDisable(GL_ALPHA_TEST);
-	}
+
+		h = 180.0;
+		w = 180.0;
+        make_coins(h, w, gl.coinTexture);
+
+}
     
-	//
-	//explosion
-	 /*if (gl.exp44.onoff) {
-		h = 480.0;
-		w = 480.0;
-		glPushMatrix();
-		glColor3f(1.0, 1.0, 1.0);
-	//	glBindTexture(GL_TEXTURE_2D, gl.exp44);
-		glEnable(GL_ALPHA_TEST);
-		glAlphaFunc(GL_GREATER, 0.0f);
-		glColor4ub(255,255,255,255);
-		glTranslated(gl.exp44.pos[0], gl.exp44.pos[1], gl.exp44.pos[2]);
-		int ix = gl.exp44.frame % 4;
-		int iy = gl.exp44.frame / 4;
-		float tx = (float)ix / 4.0;
-		float ty = (float)iy / 4.0;
-		glBegin(GL_QUADS);
-        
-		glVertex2i(-gl.xres, gl.yres);
-		glVertex2i(-gl.xres, -gl.yres);
-		glVertex2i( gl.xres, -gl.yres);
-		glVertex2i( gl.xres, gl.yres);
-        
-			glTexCoord2f(tx,      ty+0.25); glVertex2i(cx-w, cy-h);
-			glTexCoord2f(tx,      ty);      glVertex2i(cx-w, cy+h);
-			glTexCoord2f(tx+0.25, ty);      glVertex2i(cx+w, cy+h);
-			glTexCoord2f(tx+0.25, ty+0.25); glVertex2i(cx+w, cy-h);
-        glEnd();
-		glPopMatrix();
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glDisable(GL_ALPHA_TEST);
-	}*/
+    
+
 	unsigned int c = 0x00ffff44;
 	r.bot = gl.yres - 20;
 	r.left = 10;
