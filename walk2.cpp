@@ -368,7 +368,7 @@ public:
 };
 Image img[4] = {
 "./images/walk.gif",
-"./images/exp.png",
+"./images/fireBall.png",
 "./images/titleScreen.png",
 "./images/scrollingBackground.jpg",
 };
