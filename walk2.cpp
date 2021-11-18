@@ -386,6 +386,7 @@ int main(void)
 			checkMouse(&e);
 			done = checkKeys(&e);
 		}
+
 		physics();
 		render();
 		x11.swapBuffers();
@@ -859,7 +860,6 @@ void render(void)
     float cx = gl.xres/2.0;
 	float cy = gl.yres/2.0;
     
-    play_sound();
     
     //show background/////////////
     show_background(gl.yres, gl.xres, gl.scrollingTexture.backTexture
@@ -881,6 +881,7 @@ void render(void)
 	//show boxes as background
 	for (int i=0; i<20; i++) {
 		glPushMatrix();
+		double sum = 0.0;
 		glTranslated(gl.box[i][0],gl.box[i][1],gl.box[i][2]);
         //changing color to blue 
 		glColor3f(0, 0, 255);
