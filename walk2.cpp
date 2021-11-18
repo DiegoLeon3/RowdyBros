@@ -375,7 +375,7 @@ public:
 };
 Image img[5] = {
 "./images/walk.gif",
-"./images/exp.png",
+"./images/fireBall.png",
 "./images/titleScreen.png",
 "./images/scrollingBackground.jpg",
 "./images/coin8bit.png",
@@ -394,6 +394,7 @@ int main(void)
 			checkMouse(&e);
 			done = checkKeys(&e);
 		}
+
 		physics();
 		render();
 		x11.swapBuffers();
@@ -425,7 +426,7 @@ unsigned char *buildAlphaData(Image *img)
 		*(ptr+3) = 1;
 		if (a==t0 && b==t1 && c==t2)
 			*(ptr+3) = 0;
-		//-----------------------------------------------
+		//--------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---------------------------------------
 		ptr += 4;
 		data += 3;
 	}
@@ -880,6 +881,8 @@ void render(void)
     glClear(GL_COLOR_BUFFER_BIT);
     float cx = gl.xres/2.0;
 	float cy = gl.yres/2.0;
+    
+    
     //show background/////////////
     show_background(gl.yres, gl.xres, gl.scrollingTexture.backTexture
             ,gl.scrollingTexture.xc, gl.scrollingTexture.yc);
@@ -900,6 +903,7 @@ void render(void)
 	//show boxes as background
 	for (int i=0; i<20; i++) {
 		glPushMatrix();
+		double sum = 0.0;
 		glTranslated(gl.box[i][0],gl.box[i][1],gl.box[i][2]);
         //changing color to blue 
 		glColor3f(0, 0, 255);
