@@ -26,6 +26,13 @@
 
 #include <GL/glut.h>
 
+#define US_OPENAL_SOUND
+#ifdef USE_OPENAL_SOUND
+#endif
+#include </usr/include/AL/alut.h>
+
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #include "fonts.h"
 #include "sabdulrazzak.cpp"
@@ -378,6 +385,7 @@ int main(void)
 {
 	initOpengl();
 	init();
+	play_sound();
 	int done = 0;
 	while (!done) {
 		while (x11.getXPending()) {
@@ -391,6 +399,7 @@ int main(void)
 		x11.swapBuffers();
 	}
 	cleanup_fonts();
+	clean_sound();
 	return 0;
 }
 
@@ -859,7 +868,7 @@ void render(void)
     float cx = gl.xres/2.0;
 	float cy = gl.yres/2.0;
     
-    play_sound();
+
     
     //show background/////////////
     show_background(gl.yres, gl.xres, gl.scrollingTexture.backTexture
@@ -1039,37 +1048,7 @@ void render(void)
 	}
     
 	//
-	//explosion
-	 /*if (gl.exp44.onoff) {
-		h = 480.0;
-		w = 480.0;
-		glPushMatrix();
-		glColor3f(1.0, 1.0, 1.0);
-	//	glBindTexture(GL_TEXTURE_2D, gl.exp44);
-		glEnable(GL_ALPHA_TEST);
-		glAlphaFunc(GL_GREATER, 0.0f);
-		glColor4ub(255,255,255,255);
-		glTranslated(gl.exp44.pos[0], gl.exp44.pos[1], gl.exp44.pos[2]);
-		int ix = gl.exp44.frame % 4;
-		int iy = gl.exp44.frame / 4;
-		float tx = (float)ix / 4.0;
-		float ty = (float)iy / 4.0;
-		glBegin(GL_QUADS);
-        
-		glVertex2i(-gl.xres, gl.yres);
-		glVertex2i(-gl.xres, -gl.yres);
-		glVertex2i( gl.xres, -gl.yres);
-		glVertex2i( gl.xres, gl.yres);
-        
-			glTexCoord2f(tx,      ty+0.25); glVertex2i(cx-w, cy-h);
-			glTexCoord2f(tx,      ty);      glVertex2i(cx-w, cy+h);
-			glTexCoord2f(tx+0.25, ty);      glVertex2i(cx+w, cy+h);
-			glTexCoord2f(tx+0.25, ty+0.25); glVertex2i(cx+w, cy-h);
-        glEnd();
-		glPopMatrix();
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glDisable(GL_ALPHA_TEST);
-	}*/
+	//
 	unsigned int c = 0x00ffff44;
 	r.bot = gl.yres - 20;
 	r.left = 10;
@@ -1081,21 +1060,21 @@ void render(void)
 	ggprint8b(&r, 16, c, "right arrow + f -> walk faster");
 	ggprint8b(&r, 16, c, "left arrow  <- walk left");
 	ggprint8b(&r, 16, c, "frame: %i", gl.walkFrame);
-	ggprint8b(&r, 16, c, "Press C for credits");
-    
-    
-    if(!gl.title){
-    glColor3f(0.0,0.0,1.0);
-    glBegin(GL_QUADS);
-		glVertex2i(-gl.xres, gl.yres);
-		glVertex2i(-gl.xres, -gl.yres);
-		glVertex2i( gl.xres, -gl.yres);
-		glVertex2i( gl.xres, gl.yres);
-	glEnd();
-	glPopMatrix();
-        show_title(gl.yres, gl.xres, gl.backgroundTexture);
-    } 
-    //credit screen 
+			ggprint8b(&r, 16, c, "Press C for credits");
+	    
+	    
+	    if(!gl.title){
+	    glColor3f(0.0,0.0,1.0);
+	    glBegin(GL_QUADS);
+			glVertex2i(-gl.xres, gl.yres);
+			glVertex2i(-gl.xres, -gl.yres);
+			glVertex2i( gl.xres, -gl.yres);
+			glVertex2i( gl.xres, gl.yres);
+		glEnd();
+		glPopMatrix();
+		show_title(gl.yres, gl.xres, gl.backgroundTexture);
+	    } 
+	    //credit screen 
     if(gl.creds){
     glColor3f(0.0,0.0,0.0);
     glBegin(GL_QUADS);
@@ -1109,11 +1088,12 @@ void render(void)
         show_ed_creds((gl.yres / 2) + 15 , gl.xres / 2);
         show_diego_creds((gl.yres / 2) + 30 , gl.xres / 2);
         show_javier_creds((gl.yres / 2) + 45 , gl.xres / 2);
-    }
+}
 
 	//if (gl.movie) {
 	//	screenCapture();
 	//}
+
 }
 
 

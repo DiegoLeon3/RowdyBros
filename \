@@ -16,12 +16,6 @@ Personal file for project
 #include </usr/include/AL/alut.h>
 #endif //USE_OPENAL_SOUND
 
-
-#ifdef USE_OPENAL_SOUND
-ALuint alBuffer;
-ALuint alSource;
-#endif
-
 void show_javier_creds(int n, int m) {
         
         Rect r;
@@ -32,22 +26,15 @@ void show_javier_creds(int n, int m) {
 
 }
 
-/*
- * play_sound must be called in physics when the bird hits coin
- * must be called in physics like -> play_sound(gl.alBufferCoin);
- * 
-*/
-
-
 void play_sound(){
         //Get started right here.
 #ifdef USE_OPENAL_SOUND
         alutInit(0, NULL);
-        
+        /*
 	if (alGetError() != AL_NO_ERROR) {
-                printf("ERROR: alutInit()\nConsider updating drivers.\n");
-                return;
-        }
+                printf("ERROR: alutInit()\n");
+                return 0;
+        }*/
 
         //Clear error state.
         alGetError();
@@ -59,10 +46,12 @@ void play_sound(){
         alListenerfv(AL_ORIENTATION, vec);
         alListenerf(AL_GAIN, 1.0f);
         //
-        //alBufferCoin holds the sound information.
+        //Buffer holds the sound information.
+        ALuint alBuffer;
         alBuffer = alutCreateBufferFromFile("./coin.wav");
         //
         //Source refers to the sound.
+        ALuint alSource;
         //Generate a source, and store it in a buffer.
         alGenSources(1, &alSource);
         alSourcei(alSource, AL_BUFFER, alBuffer);
@@ -70,20 +59,15 @@ void play_sound(){
         alSourcef(alSource, AL_GAIN, 1.0f);
         alSourcef(alSource, AL_PITCH, 1.0f);
         alSourcei(alSource, AL_LOOPING, AL_FALSE);
+        /*
+	if (alGetError() != AL_NO_ERROR) {
+                printf("ERROR: setting source\n");
+                return 0;
+        }*/
         for (int i=0; i<4; i++) {
                 alSourcePlay(alSource);
                 usleep(250000);
         }
-	if (alGetError() != AL_NO_ERROR) {
-		printf("ERROR: setting source\n");
-		return;
-	}
-#endif //USE_OPENAL_SOUND
-}
-
-void clean_sound(){
-	
-	#ifdef USE_OPENAL_SOUND
         //Cleanup.
         //First delete the source.
         alDeleteSources(1, &alSource);
@@ -100,5 +84,5 @@ void clean_sound(){
         alcDestroyContext(Context);
         //Close device.
         alcCloseDevice(Device);
-	#endif //USE_OPENAL_SOUND
+#endif //USE_OPENAL_SOUND
 }
