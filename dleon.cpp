@@ -11,87 +11,9 @@
 #include <X11/keysym.h>
 #include <GL/glx.h>
 #include "log.h" 
-#include "Monster.h"
 #define rnd() (((double)rand())/(double)RAND_MAX)
 
 
-
-Monster:: Monster(){
-        pos[0] = 200.0f;
-        pos[1] = 280.0f;
-        vel[0] = rnd() * 0.6 - 0.3;
-        vel[1] = rnd() * 0.6 - 0.3;
-        xres = 800;
-        yres = 800;
-        n = 12; 
-        w = 2;
-        h = 2;
-}
-
-
-void makeParticle(int mx, int my, Monster *monster, int yres)
- {
-     //printf("makeParticle");
-     if (monster->n >= MAX_PARTICLES)
-        return;
-     monster[monster->n].pos[0] = mx;
-     monster[monster->n].pos[1] = yres - my;
-     monster[monster->n].vel[0] = rnd() * 0.6 - 0.3;
-     monster[monster->n].vel[1] = rnd() * 0.6 - 0.2;
-     monster[monster->n].w = 4;
-    monster[monster->n].h = 4;
-    ++monster->n;
- }
-
-void particlePhysics(Monster *monster){
-     //printf("particlePhysics");
-        Monster *p = monster;
-     for (int i = 0; i < monster->n; i++) {
-         p->vel[1] -= 0.5;
-         p->pos[0] += p->vel[0];
-         p->pos[1] += p->vel[1];
-      //for( int j =0; j < 5; j++){
-        //   if (p->pos[1]-p->h <= ybox[j] + hbox[j] &&
-        //       p->pos[0]-p->w <= xbox[j] + wbox[j] &&
-        //       p->pos[0] + p->w >= xbox[j] - wbox[j])
-         
-              p->pos[1] = p->h + 0.001;
-              p->vel[1] = -(p->vel[1] * 0.9);
-              p->vel[0] *= 1.1;
-          
-      //}
-         //did particle fall off screen?
-        //  if( p->pos[1] < 0.0)
-        //  {
-        //  //remove particle from array
-        //      monster[i] = monster[monster->n-1];
-        //      --monster->n;
-        // }
-        ++p;
-     }
-
-}
-
-void particleRender(Monster *monster){
-     //printf("particleRender");
-         Monster *p = monster;
-     for (int i = 0; i < monster->n; i++) {
-     glPushMatrix();
-     glColor3ub(145, 145, 240);
-         glTranslatef(p->pos[0], p->pos[1], 0.0f);
-     glBegin(GL_QUADS);
-         glVertex2f(-p->w, -p->h);
-         glVertex2f(-p->w,  p->h);
-         glVertex2f( p->w,  p->h);
-         glVertex2f( p->w, -p->h);
- 
-     glEnd();
-     glPopMatrix();
-     ++p;
-     }
-
-
-}
 
 void resetGame(int &gameover, int &gameScore)
 {

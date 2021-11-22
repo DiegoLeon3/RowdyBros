@@ -114,7 +114,6 @@ class Texture {
 
 class Global {
 public:
- 	Monster monster[MAX_PARTICLES]; 
 	int gameover;
 	int gameScore;
 	unsigned char keys[65536];
@@ -179,8 +178,8 @@ public:
 		int quit = 0; 
 
         
-        coinFrame = 0;
-        coinImage = NULL;
+       // coinFrame = 0;
+        //coinImage = NULL;
 
 
 		MakeVector(ball_pos, 520.0, 0, 0);
@@ -388,13 +387,13 @@ public:
 			unlink(ppmname);
 	}
 };
-Image img[5] = {
+Image img[6] = {
 "./images/walk.gif",
 "./images/fireBall.png",
 "./images/titleScreen.png",
 "./images/scrollingBackground.jpg",
-"./images/gameOver.jpg"
-"./images/coin8bit.png",
+"./images/gameOver.jpg",
+"./images/coin8bit.png"
 };
 
 
@@ -502,11 +501,11 @@ void initOpengl(void)
 
 
 
-   
-=======
+
     
     //----------------------------------------------------------- 
     //Coin image setup
+	/*
     glGenTextures(1, &gl.coinTexture);
     w = img[4].width;
     h = img[4].height;
@@ -516,7 +515,7 @@ void initOpengl(void)
      glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
      
      glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h,0, GL_RGB, GL_UNSIGNED_BYTE, img[4].data);
-    
+    */
 
     /* 
 
@@ -793,7 +792,6 @@ void physics(void)
 {
 	if (gl.gameover)
         return;
-	particlePhysics(gl.monster);
     //to move backgriund when player is in motion 
     //if(player in motion){
     //  gl.walk.xc[0]
@@ -1057,14 +1055,14 @@ void render(void)
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_ALPHA_TEST);
 	
-	//
-	if (gl.exp.onoff) {
+// 	//
+// 	if (gl.exp.onoff) {
 
-		h = 180.0;
-		w = 180.0;
-        make_coins(h, w, gl.coinTexture);
+// 		h = 180.0;
+// 		w = 180.0;
+//         make_coins(h, w, gl.coinTexture);
 
-}
+// }
     
 
 	unsigned int c = 0x00ffff44;
@@ -1124,7 +1122,6 @@ void render(void)
         show_diego_creds((gl.yres / 2) + 30 , gl.xres / 2);
         show_javier_creds((gl.yres / 2) + 45 , gl.xres / 2);
     }
-	particleRender(gl.monster);
 
 }
 
