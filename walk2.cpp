@@ -1076,7 +1076,7 @@ void render(void)
             glTexCoord2f(tx+0.25, ty+0.25); glVertex2i(cx+w, cy-h);
         glEnd();
         glPopMatrix();
-        glBindTexture(GL_TEXTURE_2D, 1);
+        glBindTexture(GL_TEXTURE_2D, 0);
         glDisable(GL_ALPHA_TEST); 
     }
     
