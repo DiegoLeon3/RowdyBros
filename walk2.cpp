@@ -1080,7 +1080,7 @@ void render(void)
         show_title(gl.yres, gl.xres, gl.backgroundTexture);
     } 
 
-	  if(!gl.gameover){
+	  if(gl.gameover){
     glColor3f(0.0,0.0,1.0);
     glBegin(GL_QUADS);
 		glVertex2i(-gl.xres, gl.yres);
