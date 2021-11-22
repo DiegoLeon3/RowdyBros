@@ -31,7 +31,7 @@ Monster:: Monster(){
 
 void makeParticle(int mx, int my, Monster *monster, int yres)
  {
-     printf("makeParticle");
+     //printf("makeParticle");
      if (monster->n >= MAX_PARTICLES)
         return;
      monster[monster->n].pos[0] = mx;
@@ -73,7 +73,7 @@ void particlePhysics(Monster *monster){
 }
 
 void particleRender(Monster *monster){
-     printf("particleRender");
+     //printf("particleRender");
          Monster *p = monster;
      for (int i = 0; i < monster->n; i++) {
      glPushMatrix();
@@ -91,6 +91,14 @@ void particleRender(Monster *monster){
      }
 
 
+}
+
+void resetGame(int &gameover, int &gameScore)
+{
+        gameover  = 0;
+        gameScore = 0; 
+        printf("Game Over");
+        // winner    = 0;
 }
 
 

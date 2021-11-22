@@ -115,12 +115,15 @@ class Texture {
 class Global {
 public:
  	Monster monster[MAX_PARTICLES]; 
+	int gameover;
+	int gameScore;
 	unsigned char keys[65536];
 	int xres, yres;
 	int movie, movieStep;
 	int walk;
     int creds;
     int title;
+	int quit; 
 	int walkFrame;
 	double delay;
 	Image *walkImage;
@@ -130,6 +133,7 @@ public:
     //Adding background Texture for title screen
 	Image *backgroundImage;
     GLuint backgroundTexture; 
+	GLuint gameOverText;
     
 
     //Adding background texture for main screen 
@@ -161,6 +165,9 @@ public:
 		walkImage=NULL;
         backgroundFrame = 0;
         backgroundImage=NULL;
+		int gameover = 0;
+		int gameScore = 0; 
+		int quit = 0; 
 
 		MakeVector(ball_pos, 520.0, 0, 0);
 		MakeVector(ball_vel, 0, 0, 0);
@@ -367,11 +374,12 @@ public:
 			unlink(ppmname);
 	}
 };
-Image img[4] = {
+Image img[5] = {
 "./images/walk.gif",
 "./images/fireBall.png",
 "./images/titleScreen.png",
 "./images/scrollingBackground.jpg",
+"./images/gameOver.jpg"
 };
 
 
@@ -462,6 +470,22 @@ void initOpengl(void)
      
      glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h,0, GL_RGB, GL_UNSIGNED_BYTE, img[2].data);
      //-------------------------------------------
+//Game Over Screen 
+   glGenTextures(1, &gl.gameOverText);
+    w = img[4].width; 
+    h = img[4].height; 
+    
+    glBindTexture(GL_TEXTURE_2D, gl.gameOverText);
+    //unsigned char* ftData = buildAlphaData(&img[2]); 
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+     
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h,0, GL_RGB, GL_UNSIGNED_BYTE, img[4].data);
+
+
+
+
+
    /* 
     ////Main Screen Set-up 
     glGenTextures(1, &gl.scrollingTexture);
@@ -656,6 +680,10 @@ int checkKeys(XEvent *e)
 	}
 	(void)shift;
 	switch (key) {
+		 case XK_q:
+		 	gl.gameover = 1;
+		 	//resetGame(gl.gameover, gl.gameScore);
+		 	break;
 		case XK_s:
 			screenCapture();
 			break;
@@ -686,6 +714,8 @@ int checkKeys(XEvent *e)
             break;
 	    case XK_p:
             gl.title ^= 1;
+			//sets game score back to zero 
+			//resetGame(gl.gameover, gl.gameScore); 
             break;
         case XK_Down:
 			break;
@@ -728,6 +758,8 @@ Flt VecNormalize(Vec vec)
 
 void physics(void)
 {
+	if (gl.gameover)
+        return;
 	particlePhysics(gl.monster);
     //to move backgriund when player is in motion 
     //if(player in motion){
@@ -1030,7 +1062,11 @@ void render(void)
 	ggprint8b(&r, 16, c, "left arrow  <- walk left");
 	ggprint8b(&r, 16, c, "frame: %i", gl.walkFrame);
 	ggprint8b(&r, 16, c, "Press C for credits");
+	ggprint8b(&r, 16, c, "Game Score: %i", gl.gameScore);
+	ggprint8b(&r, 16, c, "Press Q to quit");
+	
     
+
     
     if(!gl.title){
     glColor3f(0.0,0.0,1.0);
@@ -1043,6 +1079,19 @@ void render(void)
 	glPopMatrix();
         show_title(gl.yres, gl.xres, gl.backgroundTexture);
     } 
+
+	  if(!gl.gameover){
+    glColor3f(0.0,0.0,1.0);
+    glBegin(GL_QUADS);
+		glVertex2i(-gl.xres, gl.yres);
+		glVertex2i(-gl.xres, -gl.yres);
+		glVertex2i( gl.xres, -gl.yres);
+		glVertex2i( gl.xres, gl.yres);
+	glEnd();
+	glPopMatrix();
+        show_title(gl.yres, gl.xres, gl.gameOverText);
+    } 
+
     //credit screen 
     if(gl.creds){
     glColor3f(0.0,0.0,0.0);
