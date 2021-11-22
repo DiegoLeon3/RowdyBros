@@ -39,7 +39,7 @@ void show_title(int yres, int xres,GLuint backgroundTexture ) {
 	r.left = xres; 
 	r.center = 1;
 	//print the creds
-	ggprint8b(&r, 16, 0xffff00, "Press P to Play");
+	ggprint8b(&r, 16, 0xffff00, "");
      glColor3f(1.0, 1.0, 1.0);
        glBindTexture(GL_TEXTURE_2D, backgroundTexture);
        glBegin(GL_QUADS);
@@ -49,3 +49,27 @@ void show_title(int yres, int xres,GLuint backgroundTexture ) {
            glTexCoord2f(1.0f, 1.0f); glVertex2i(xres, 0);
        glEnd();
 }
+
+void make_coins(int h, int w, GLuint coinTexture){ 
+
+    Rect r; 
+    r.bot = h;
+    r.left = w; 
+    r.center = 10;
+	ggprint8b(&r, 16, 0xffff00, "");
+     glColor3f(1.0, 1.0, 1.0);
+       glBindTexture(GL_TEXTURE_2D, coinTexture);
+       glBegin(GL_QUADS);
+           glTexCoord2f(0.0f, 1.0f); glVertex2i(500, 500);
+           glTexCoord2f(0.0f, 0.0f); glVertex2i(0, h);
+           glTexCoord2f(1.0f, 0.0f); glVertex2i(w, h);
+           glTexCoord2f(1.0f, 1.0f); glVertex2i(w, 0);
+       glEnd();
+}
+
+
+
+
+
+
+
