@@ -389,7 +389,7 @@ public:
 };
 Image img[6] = {
 "./images/walk.gif",
-"./images/fireBall.png",
+"./images/roachc.png",
 "./images/titleScreen.png",
 "./images/scrollingBackground.jpg",
 "./images/gameOver.jpg",
@@ -579,8 +579,8 @@ void initOpengl(void)
 
     //-------------------------------------------------------------------------
 	//create opengl texture elements
-	w = img[2].width;
-	h = img[2].height;
+	w = img[1].width;
+	h = img[1].height;
 	glGenTextures(1, &gl.exp.tex);
 	//-------------------------------------------------------------------------
 	//this is similar to a sprite graphic
@@ -588,7 +588,7 @@ void initOpengl(void)
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
 	//must build a new set of data...
-	unsigned char *xData = buildAlphaData(&img[2]);	
+	unsigned char *xData = buildAlphaData(&img[1]);	
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0,
 		GL_RGBA, GL_UNSIGNED_BYTE, xData);
 	free(xData);
@@ -1054,15 +1054,31 @@ void render(void)
 	glPopMatrix();
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_ALPHA_TEST);
-	
-// 	//
-// 	if (gl.exp.onoff) {
 
-// 		h = 180.0;
-// 		w = 180.0;
-//         make_coins(h, w, gl.coinTexture);
-
-// }
+    if (gl.exp.onoff) {
+        h = 80.0;
+        w = 80.0;
+        glPushMatrix();
+        glColor3f(1.0,1.0,1.0);
+        glBindTexture(GL_TEXTURE_2D, gl.exp.tex);
+        glEnable(GL_ALPHA_TEST);
+        glAlphaFunc(GL_GREATER, 0.0f);
+        glColor4ub(255,255,255,255);
+        glTranslated(gl.exp.pos[0], gl.exp.pos[1], gl.exp.pos[2]);
+        int ix = gl.exp.frame % 4;
+        int iy = gl.exp.frame / 4;
+        float tx = (float)ix / 4.0;
+        float ty = (float)iy / 4.0;
+        glBegin(GL_QUADS);
+            glTexCoord2f(tx,    ty+0.25);   glVertex2i(cx-w, cy-h);
+            glTexCoord2f(tx,    ty);        glVertex2i(cx-w, cy+h);
+            glTexCoord2f(tx+0.25,    ty);   glVertex2i(cx+w, cy+h);
+            glTexCoord2f(tx+0.25, ty+0.25); glVertex2i(cx+w, cy-h);
+        glEnd();
+        glPopMatrix();
+        glBindTexture(GL_TEXTURE_2D, 1);
+        glDisable(GL_ALPHA_TEST); 
+    }
     
 
 	unsigned int c = 0x00ffff44;
