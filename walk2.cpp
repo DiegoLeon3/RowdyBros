@@ -151,6 +151,7 @@ public:
 	
     Vec box[20];
 	Sprite exp;
+	Sprite coin8bit;
 	Sprite exp44;
 	Vec ball_pos;
 	Vec ball_vel;
@@ -193,6 +194,10 @@ public:
 		exp44.frame=0;
 		exp44.image=NULL;
 		exp44.delay = 0.022;
+        coin8bit.onoff=0;
+		coin8bit.frame=0;
+		coin8bit.image=NULL;
+		coin8bit.delay = 0.02;
 		for (int i=0; i<20; i++) {
 			box[i][0] = rnd() * xres;
 			box[i][1] = rnd() * (yres-220) + 220.0;
@@ -727,11 +732,11 @@ int checkKeys(XEvent *e)
 			gl.walk ^= 1;
 			break;
 		case XK_e:
-			gl.exp.pos[0] = 200.0;
-			gl.exp.pos[1] = -60.0;
-			gl.exp.pos[2] =   0.0;
-			timers.recordTime(&gl.exp.time);
-			gl.exp.onoff ^= 1;
+			gl.coin8bit.pos[0] = 200.0;
+			gl.coin8bit.pos[1] = -60.0;
+			gl.coin8bit.pos[2] =   0.0;
+			timers.recordTime(&gl.coin8bit.time);
+			gl.coin8bit.onoff ^= 1;
 			break;
 		case XK_Left:
 			break;
@@ -866,6 +871,9 @@ void physics(void)
 		if (gl.exp44.onoff) {
 			gl.exp44.pos[0] -= 2.0 * (0.05 / gl.delay);
 		}
+        if(gl.coin8bit.onoff){
+            gl.coin8bit.pos[0] -= 2.0 * (0.05 / gl.delay);
+        }
 	}
 	if (gl.exp.onoff) {
 		//explosion is happening
@@ -880,6 +888,22 @@ void physics(void)
 				gl.exp.frame = 0;
 			} else {
 				timers.recordTime(&gl.exp.time);
+			}
+		}
+	}
+	if (gl.coin8bit.onoff) {
+		//coin is happening
+		timers.recordTime(&timers.timeCurrent);
+		double timeSpan = timers.timeDiff(&gl.coin8bit.time, &timers.timeCurrent);
+		if (timeSpan > gl.coin8bit.delay) {
+			//coin frame
+			++gl.coin8bit.frame;
+			if (gl.coin8bit.frame >= 16) {
+				//coin is done.
+				gl.coin8bit.onoff = 0;
+				gl.coin8bit.frame = 0;
+			} else {
+				timers.recordTime(&gl.coin8bit.time);
 			}
 		}
 	}
@@ -1055,8 +1079,9 @@ void render(void)
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_ALPHA_TEST);
 	
-// 	//
-// 	if (gl.exp.onoff) {
+
+	//
+	if (gl.coin8bit.onoff) {
 
 // 		h = 180.0;
 // 		w = 180.0;
