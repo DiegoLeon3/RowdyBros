@@ -407,6 +407,7 @@ int main(void)
 	
 	initOpengl();
 	init();
+	play_sound();
 	int done = 0;
 	while (!done) {
 		while (x11.getXPending()) {
@@ -420,6 +421,7 @@ int main(void)
 		render();
 		x11.swapBuffers();
 	}
+	clean_sound();
 	cleanup_fonts();
 	return 0;
 }

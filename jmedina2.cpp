@@ -60,7 +60,7 @@ void play_sound(){
         alListenerf(AL_GAIN, 1.0f);
         //
         //alBufferCoin holds the sound information.
-        alBuffer = alutCreateBufferFromFile("./coin.wav");
+        alBuffer = alutCreateBufferFromFile("./theme.wav");
         //
         //Source refers to the sound.
         //Generate a source, and store it in a buffer.
