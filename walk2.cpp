@@ -39,7 +39,7 @@ typedef double Vec[3];
 typedef Flt	Matrix[4][4];
 
 //macros
-#define rnd() (((double)rand())/(double)RAND_MAX)
+//  #define rnd() (((double)rand())/(double)RAND_MAX)
 #define random(a) (rand()%a)
 #define MakeVector(v, x, y, z) (v)[0]=(x),(v)[1]=(y),(v)[2]=(z)
 #define VecCopy(a,b) (b)[0]=(a)[0];(b)[1]=(a)[1];(b)[2]=(a)[2]
@@ -114,12 +114,16 @@ class Texture {
 
 class Global {
 public:
+ 	Monster monster[MAX_PARTICLES]; 
+	int gameover;
+	int gameScore;
 	unsigned char keys[65536];
 	int xres, yres;
 	int movie, movieStep;
 	int walk;
     int creds;
     int title;
+	int quit; 
 	int walkFrame;
 	double delay;
 	Image *walkImage;
@@ -130,10 +134,15 @@ public:
 	Image *backgroundImage;
     GLuint backgroundTexture; 
 
+	GLuint gameOverText;
+    
+
+
 //declaring the coin
-     int coinFrame;
-     Image *coinImage;
-     GLuint coinTexture;    
+     //int coinFrame;
+     //Image *coinImage;
+     //GLuint coinTexture;    
+
 
     //Adding background texture for main screen 
 	Texture scrollingTexture;
@@ -164,9 +173,15 @@ public:
 		walkImage=NULL;
         backgroundFrame = 0;
         backgroundImage=NULL;
+
+		int gameover = 0;
+		int gameScore = 0; 
+		int quit = 0; 
+
         
         coinFrame = 0;
         coinImage = NULL;
+
 
 		MakeVector(ball_pos, 520.0, 0, 0);
 		MakeVector(ball_vel, 0, 0, 0);
@@ -378,12 +393,14 @@ Image img[5] = {
 "./images/fireBall.png",
 "./images/titleScreen.png",
 "./images/scrollingBackground.jpg",
+"./images/gameOver.jpg"
 "./images/coin8bit.png",
 };
 
 
 int main(void)
 {
+	
 	initOpengl();
 	init();
 	int done = 0;
@@ -468,6 +485,25 @@ void initOpengl(void)
      
      glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h,0, GL_RGB, GL_UNSIGNED_BYTE, img[2].data);
      //-------------------------------------------
+
+//Game Over Screen 
+   glGenTextures(1, &gl.gameOverText);
+    w = img[4].width; 
+    h = img[4].height; 
+    
+    glBindTexture(GL_TEXTURE_2D, gl.gameOverText);
+    //unsigned char* ftData = buildAlphaData(&img[2]); 
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+     
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h,0, GL_RGB, GL_UNSIGNED_BYTE, img[4].data);
+
+
+
+
+
+   
+=======
     
     //----------------------------------------------------------- 
     //Coin image setup
@@ -483,6 +519,7 @@ void initOpengl(void)
     
 
     /* 
+
     ////Main Screen Set-up 
     glGenTextures(1, &gl.scrollingTexture);
     w = img[3].width; 
@@ -590,12 +627,17 @@ void checkMouse(XEvent *e)
 	if (e->type != ButtonRelease && e->type != ButtonPress &&
 			e->type != MotionNotify)
 		return;
+
+	int mx = e->xbutton.x;
+	int my = e->xbutton.y;
+
 	if (e->type == ButtonRelease) {
 		return;
 	}
 	if (e->type == ButtonPress) {
 		if (e->xbutton.button==1) {
 			//Left button is down
+			//makeParticle(mx,my,gl.monster, gl.yres);
 		}
 		if (e->xbutton.button==3) {
 			//Right button is down
@@ -604,8 +646,12 @@ void checkMouse(XEvent *e)
 	if (e->type == MotionNotify) {
 		if (savex != e->xbutton.x || savey != e->xbutton.y) {
 			//Mouse moved
-			savex = e->xbutton.x;
-			savey = e->xbutton.y;
+			 savex = e->xbutton.x;
+			 savey = e->xbutton.y;
+
+			//for(int i =0; i<5; i++)
+            //makeParticle(savex,savey,gl.monster, gl.yres);
+
 		}
 	}
 }
@@ -667,6 +713,10 @@ int checkKeys(XEvent *e)
 	}
 	(void)shift;
 	switch (key) {
+		 case XK_q:
+		 	gl.gameover = 1;
+		 	//resetGame(gl.gameover, gl.gameScore);
+		 	break;
 		case XK_s:
 			screenCapture();
 			break;
@@ -693,11 +743,12 @@ int checkKeys(XEvent *e)
 		case XK_Up:
 			break;
         case XK_c:
-        
             gl.creds ^= 1;
             break;
 	    case XK_p:
             gl.title ^= 1;
+			//sets game score back to zero 
+			//resetGame(gl.gameover, gl.gameScore); 
             break;
         case XK_Down:
 			break;
@@ -740,7 +791,9 @@ Flt VecNormalize(Vec vec)
 
 void physics(void)
 {
-
+	if (gl.gameover)
+        return;
+	particlePhysics(gl.monster);
     //to move backgriund when player is in motion 
     //if(player in motion){
     //  gl.walk.xc[0]
@@ -874,6 +927,7 @@ void physics(void)
 
 void render(void)
 {
+	
 	Rect r;
 	//Clear the screen
 	glClearColor(1.0, 1.0, 1.0, 1.0);
@@ -882,39 +936,11 @@ void render(void)
     float cx = gl.xres/2.0;
 	float cy = gl.yres/2.0;
     
-    
     //show background/////////////
     show_background(gl.yres, gl.xres, gl.scrollingTexture.backTexture
             ,gl.scrollingTexture.xc, gl.scrollingTexture.yc);
 
-/*
-//////////////////////
-	//show ground
-	glBegin(GL_QUADS);
-		//glColor3f(0.2, 0.2, 0.2);
-		glVertex2i(0,       220);
-		glVertex2i(gl.xres, 220);
-		//glColor3f(0.4, 0.4, 0.4);
-		glVertex2i(gl.xres,   0);
-		glVertex2i(0,         0);
-	glEnd();
-    
-	//
-	//show boxes as background
-	for (int i=0; i<20; i++) {
-		glPushMatrix();
-		double sum = 0.0;
-		glTranslated(gl.box[i][0],gl.box[i][1],gl.box[i][2]);
-        //changing color to blue 
-		glColor3f(0, 0, 255);
-		glBegin(GL_QUADS);
-			glVertex2i( 0,  0);
-			glVertex2i( 0, 30);
-			glVertex2i(20, 30);
-			glVertex2i(20,  0);
-		glEnd();
-		glPopMatrix();
-	}*/
+
 	//
 	//========================
 	//Render the tile system
@@ -1031,10 +1057,6 @@ void render(void)
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_ALPHA_TEST);
 	
-    //
-    //
-    //
-    
 	//
 	if (gl.exp.onoff) {
 
@@ -1043,7 +1065,6 @@ void render(void)
         make_coins(h, w, gl.coinTexture);
 
 }
-    
     
 
 	unsigned int c = 0x00ffff44;
@@ -1058,7 +1079,11 @@ void render(void)
 	ggprint8b(&r, 16, c, "left arrow  <- walk left");
 	ggprint8b(&r, 16, c, "frame: %i", gl.walkFrame);
 	ggprint8b(&r, 16, c, "Press C for credits");
+	ggprint8b(&r, 16, c, "Game Score: %i", gl.gameScore);
+	ggprint8b(&r, 16, c, "Press Q to quit");
+	
     
+
     
     if(!gl.title){
     glColor3f(0.0,0.0,1.0);
@@ -1071,6 +1096,19 @@ void render(void)
 	glPopMatrix();
         show_title(gl.yres, gl.xres, gl.backgroundTexture);
     } 
+
+	  if(gl.gameover){
+    glColor3f(0.0,0.0,1.0);
+    glBegin(GL_QUADS);
+		glVertex2i(-gl.xres, gl.yres);
+		glVertex2i(-gl.xres, -gl.yres);
+		glVertex2i( gl.xres, -gl.yres);
+		glVertex2i( gl.xres, gl.yres);
+	glEnd();
+	glPopMatrix();
+        show_title(gl.yres, gl.xres, gl.gameOverText);
+    } 
+
     //credit screen 
     if(gl.creds){
     glColor3f(0.0,0.0,0.0);
@@ -1086,10 +1124,8 @@ void render(void)
         show_diego_creds((gl.yres / 2) + 30 , gl.xres / 2);
         show_javier_creds((gl.yres / 2) + 45 , gl.xres / 2);
     }
+	particleRender(gl.monster);
 
-	//if (gl.movie) {
-	//	screenCapture();
-	//}
 }
 
 
