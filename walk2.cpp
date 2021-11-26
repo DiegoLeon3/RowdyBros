@@ -692,7 +692,6 @@ int checkKeys(XEvent *e)
 		case XK_Up:
 			break;
         case XK_c:
-        
             gl.creds ^= 1;
             break;
 	    case XK_p:
@@ -714,6 +713,9 @@ int checkKeys(XEvent *e)
         case XK_Escape:
 			return 1;
 			break;
+        case XK_0:
+            exit(0);
+            break;
 	}
 	return 0;
 }

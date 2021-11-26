@@ -30,7 +30,8 @@ void show_ed_creds(int n, int m) {
 }
 
 
-void show_title(int yres, int xres,GLuint backgroundTexture ) {
+void show_title(int yres, int xres,GLuint backgroundTexture )
+{
 	//establish centering 
 	//using yres and xres
 	//
@@ -50,7 +51,8 @@ void show_title(int yres, int xres,GLuint backgroundTexture ) {
        glEnd();
 }
 
-void make_coins(int h, int w, GLuint coinTexture){ 
+void make_coins(int h, int w, GLuint coinTexture)
+{ 
 
     Rect r; 
     r.bot = h;
@@ -66,6 +68,7 @@ void make_coins(int h, int w, GLuint coinTexture){
            glTexCoord2f(1.0f, 1.0f); glVertex2i(w, 0);
        glEnd();
 }
+
 
 
 
