@@ -52,6 +52,8 @@ typedef Flt Matrix[4][4];
 const float timeslice = 1.0f;
 const float gravity = -0.2f;
 #define ALPHA 1
+#define PI 3.141592653589793
+
 
 //function prototypes
 void initOpengl();
@@ -92,6 +94,125 @@ public:
 //-----------------------------------------------------------------------------
 
 class Image;
+
+//---------Set up Monster Class 
+class Monster {
+public:
+        Vec pos;
+        Vec vel;
+        int nverts;
+        Flt radius;
+        Vec vert[8];
+        float angle;
+        float color[3];
+        struct Monster *prev;
+        struct Monster *next;
+public:
+        Monster() {
+                prev = NULL;
+                next = NULL;
+        }
+};
+
+// void deleteMonster(Game *g, Monster *node)
+// {
+//         //Remove a node from doubly-linked list
+//         //Must look at 4 special cases below.
+//         if (node->prev == NULL) {
+//                 if (node->next == NULL) {
+//                         //only 1 item in list.
+//                         g->ahead = NULL;
+//                 } else {
+//                         //at beginning of list.
+//                         node->next->prev = NULL;
+//                         g->ahead = node->next;
+//                 }
+//         } else {
+//                 if (node->next == NULL) {
+//                         //at end of list.
+//                         node->prev->next = NULL;
+//                 } else {
+//                         //in middle of list.
+//                         node->prev->next = node->next;
+//                         node->next->prev = node->prev;
+//                 }
+//         }
+//         delete node;
+//         node = NULL;
+// };
+
+void buildMonsterFragment(Monster *ta, Monster *a)
+{
+        //build ta from a
+        ta->nverts = 8;
+        ta->radius = a->radius / 2.0;
+        Flt r2 = ta->radius / 2.0;
+        Flt angle = 0.0f;
+        Flt inc = (PI * 2.0) / (Flt)ta->nverts;
+        for (int i=0; i<ta->nverts; i++) {
+                ta->vert[i][0] = sin(angle) * (r2 + rnd() * ta->radius);
+                ta->vert[i][1] = cos(angle) * (r2 + rnd() * ta->radius);
+                angle += inc;
+        }
+        ta->pos[0] = a->pos[0] + rnd()*10.0-5.0;
+        ta->pos[1] = a->pos[1] + rnd()*10.0-5.0;
+        ta->pos[2] = 0.0f;
+        ta->angle = 0.0;
+        ta->color[0] = 0.8;
+        ta->color[1] = 0.8;
+        ta->color[2] = 0.7;
+        ta->vel[0] = a->vel[0] + (rnd()*2.0-1.0);
+        ta->vel[1] = a->vel[1] + (rnd()*2.0-1.0);
+        //std::cout << "frag" << std::endl;
+};
+
+
+
+class Game {
+public:
+        Monster *ahead;
+        int nMonsters;
+public:
+        Game() {
+                ahead = NULL;
+                nMonsters = 0;
+                //build 10 Monsters...
+                for (int j=0; j<10; j++) {
+                        Monster *a = new Monster;
+                        a->nverts = 8;
+                        a->radius = rnd()*80.0 + 40.0;
+                        Flt r2 = a->radius / 2.0;
+                        Flt angle = 0.0f;
+                        Flt inc = (PI * 2.0) / (Flt)a->nverts;
+                        for (int i=0; i<a->nverts; i++) {
+                                a->vert[i][0] = sin(angle) * (r2 + rnd() * a->radius);
+                                a->vert[i][1] = cos(angle) * (r2 + rnd() * a->radius);
+                                angle += inc;
+                        }
+                        a->pos[0] = (Flt)(rand() % 800);
+                        a->pos[1] = (Flt)(rand() % 600);
+                        a->pos[2] = 0.0f;
+                        a->angle = 0.0;
+                        a->color[0] = 0.8;
+                        a->color[1] = 0.8;
+                        a->color[2] = 0.7;
+                        a->vel[0] = (Flt)(rnd()*2.0-1.0);
+                        a->vel[1] = (Flt)(rnd()*2.0-1.0);
+                        //std::cout << "Monster" << std::endl;
+                        //add to front of linked list
+                        a->next = ahead;
+                        if (ahead != NULL)
+                                ahead->prev = a;
+                        ahead = a;
+                        ++nMonsters;
+                }
+        }
+        ~Game() {
+                
+        }
+} g;
+
+
 
 class Sprite
 {
@@ -700,16 +821,6 @@ void checkMouse(XEvent *e)
 		}
 	}
 }
-void drawShape2(void)
-{
-	glBegin(GL_POLYGON);
-	glColor3f(1.0, 0.0, 0.0);
-	glVertex2f(232, 250);
-	glVertex2f(232, 200);
-	glVertex2f(290, 200);
-	glVertex2f(290, 250);
-	glEnd();
-}
 
 void screenCapture()
 {
@@ -861,6 +972,87 @@ void physics(void)
 	//  gl.walk.xc[0]
 	//
 	//}
+
+	//-------------------------
+	//Update Monster positions
+        Monster *a = g.ahead;
+        while (a) {
+                a->pos[0] += a->vel[0];
+                a->pos[1] += a->vel[1];
+                //Check for collision with window edges
+                if (a->pos[0] < -100.0) {
+                        a->pos[0] += (float)gl.xres+200;
+                }
+                else if (a->pos[0] > (float)gl.xres+100) {
+                        a->pos[0] -= (float)gl.xres+200;
+                }
+                else if (a->pos[1] < -100.0) {
+                        a->pos[1] += (float)gl.yres+200;
+                }
+                else if (a->pos[1] > (float)gl.yres+100) {
+                        a->pos[1] -= (float)gl.yres+200;
+                }
+                a = a->next;
+        }
+        //
+        //Monster collision with bullets?
+        //If collision detected:
+        //     1. delete the bullet
+        //     2. break the Monster into pieces
+        //        if Monster small, delete it
+        a = g.ahead;
+        // while (a) {
+        //         //is there a bullet within its radius?
+        //         int i=0;
+        //         while (i < g.nbullets) {
+        //                 Bullet *b = &g.barr[i];
+        //                 d0 = b->pos[0] - a->pos[0];
+        //                 d1 = b->pos[1] - a->pos[1];
+        //                 dist = (d0*d0 + d1*d1);
+        //                 if (dist < (a->radius*a->radius)) {
+        //                         //std::cout << "Monster hit." << std::endl;
+        //                         //this Monster is hit.
+        //                         if (a->radius > MINIMUM_Monster_SIZE) {
+        //                                 //break it into pieces.
+        //                                 Monster *ta = a;
+        //                                 buildMonsterFragment(ta, a);
+        //                                 int r = rand()%10+5;
+        //                                 for (int k=0; k<r; k++) {
+        //                                         //get the next Monster position in the array
+        //                                         Monster *ta = new Monster;
+        //                                         buildMonsterFragment(ta, a);
+        //                                         //add to front of Monster linked list
+        //                                         ta->next = g.ahead;
+        //                                         if (g.ahead != NULL)
+        //                                                 g.ahead->prev = ta;
+        //                                         g.ahead = ta;
+        //                                         g.nMonsters++;
+        //                                 }
+        //                         } else {
+        //                                 a->color[0] = 1.0;
+        //                                 a->color[1] = 0.1;
+        //                                 a->color[2] = 0.1;
+        //                                 //Monster is too small to break up
+        //                                 //delete the Monster and bullet
+        //                                 Monster *savea = a->next;
+        //                                 deleteMonster(&g, a);
+        //                                 a = savea;
+        //                                 g.nMonsters--;
+        //                         }
+        //                         //delete the bullet...
+        //                         memcpy(&g.barr[i], &g.barr[g.nbullets-1], sizeof(Bullet));
+        //                         g.nbullets--;
+        //                         if (a == NULL)
+        //                                 break;
+        //                 }
+        //                 i++;
+        //         }
+        //         if (a == NULL)
+        //                 break;
+        //         a = a->next;
+        // }
+        //---------------------------------------------
+	//------------------------
 
 	if (gl.walk || gl.keys[XK_Right] || gl.keys[XK_Left])
 	{
@@ -1175,6 +1367,36 @@ void render(void)
 	renderSprite();
 	renderScreenText();
 	drawShape2();
+
+	//--------------
+	//Draw the Monsters
+        {
+                Monster *a = g.ahead;
+                while (a) {
+                        //Log("draw Monster...\n");
+                        glColor3fv(a->color);
+                        glPushMatrix();
+                        glTranslatef(a->pos[0], a->pos[1], a->pos[2]);
+                        glRotatef(a->angle, 0.0f, 0.0f, 1.0f);
+                        glBegin(GL_LINE_LOOP);
+                        //Log("%i verts\n",a->nverts);
+                        for (int j=0; j<a->nverts; j++) {
+                                glVertex2f(a->vert[j][0], a->vert[j][1]);
+                        }
+                        glEnd();
+                        //glBegin(GL_LINES);
+                        //      glVertex2f(0,   0);
+                        //      glVertex2f(a->radius, 0);
+                        //glEnd();
+                        glPopMatrix();
+                        glColor3f(1.0f, 0.0f, 0.0f);
+                        glBegin(GL_POINTS);
+                        glVertex2f(a->pos[0], a->pos[1]);
+                        glEnd();
+                        a = a->next;
+                }
+        }
+	//--------------
 
 	if (!gl.title)
 	{
