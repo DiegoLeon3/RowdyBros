@@ -263,33 +263,16 @@ public:
 	int quit;
 	int walkFrame;
 	double delay;
-	Image *walkImage;
-	GLuint walkTexture;
+	Sprite Rowdy; 
 	//declaring the bacground and its texture
 	int backgroundFrame;
 	//Adding background Texture for title screen
 	Image *backgroundImage;
 	GLuint backgroundTexture;
-
 	GLuint gameOverText;
-
-	//declaring the coin
-	//int coinFrame;
-	//Image *coinImage;
-	//GLuint coinTexture;
-
-	//Adding background texture for main screen
 	Texture scrollingTexture;
-	// Image *scrollingImage;
-	//GLuint scrollingTexture;
-	//////////
 
 	Vec box[20];
-	Sprite exp;
-	Sprite coin8bit;
-	Sprite exp44;
-	Vec ball_pos;
-	Vec ball_vel;
 	//camera is centered at (0,0) lower-left of screen.
 	Flt camera[2];
 	~Global()
@@ -307,7 +290,8 @@ public:
 		yres = 600;
 		walk = 0;
 		walkFrame = 0;
-		walkImage = NULL;
+		Rowdy.image = NULL; 
+		//walkImage = NULL;
 		backgroundFrame = 0;
 		backgroundImage = NULL;
 
@@ -316,24 +300,8 @@ public:
 		int quit = 0;
 		int titleSound = 1;
 
-		// coinFrame = 0;
-		//coinImage = NULL;
-
-		MakeVector(ball_pos, 520.0, 0, 0);
-		MakeVector(ball_vel, 0, 0, 0);
+	
 		delay = 0.1;
-		exp.onoff = 0;
-		exp.frame = 0;
-		exp.image = NULL;
-		exp.delay = 0.02;
-		exp44.onoff = 0;
-		exp44.frame = 0;
-		exp44.image = NULL;
-		exp44.delay = 0.022;
-		coin8bit.onoff = 0;
-		coin8bit.frame = 0;
-		coin8bit.image = NULL;
-		coin8bit.delay = 0.02;
 		for (int i = 0; i < 20; i++)
 		{
 			box[i][0] = rnd() * xres;
@@ -668,13 +636,13 @@ void initOpengl(void)
 	h = img[0].height;
 	//
 	//create opengl texture elements
-	glGenTextures(1, &gl.walkTexture);
+	glGenTextures(1, &gl.Rowdy.tex);
 
 	//-------------------------------------------------------------------------
 	//silhouette
 	//this is similar to a sprite graphic
 	//
-	glBindTexture(GL_TEXTURE_2D, gl.walkTexture);
+	glBindTexture(GL_TEXTURE_2D, gl.Rowdy.tex);
 	//
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -685,37 +653,6 @@ void initOpengl(void)
 				 GL_RGBA, GL_UNSIGNED_BYTE, walkData);
 	free(walkData);
 
-	//-------------------------------------------------------------------------
-	//create opengl texture elements
-	w = img[2].width;
-	h = img[2].height;
-	glGenTextures(1, &gl.exp.tex);
-	//-------------------------------------------------------------------------
-	//this is similar to a sprite graphic
-	glBindTexture(GL_TEXTURE_2D, gl.exp.tex);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	//must build a new set of data...
-	unsigned char *xData = buildAlphaData(&img[2]);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0,
-				 GL_RGBA, GL_UNSIGNED_BYTE, xData);
-	free(xData);
-
-	//-------------------------------------------------------------------------
-	w = img[1].width;
-	h = img[1].height;
-	//create opengl texture elements
-	glGenTextures(1, &gl.exp44.tex);
-	//-------------------------------------------------------------------------
-	//this is similar to a sprite graphic
-	glBindTexture(GL_TEXTURE_2D, gl.exp44.tex);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	//must build a new set of data...
-	xData = buildAlphaData(&img[1]);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0,
-				 GL_RGBA, GL_UNSIGNED_BYTE, xData);
-	free(xData);
 }
 
 void init()
@@ -767,45 +704,6 @@ void checkMouse(XEvent *e)
 	}
 }
 
-void screenCapture()
-{
-	static int fnum = 0;
-	static int vid = 0;
-	if (!vid)
-	{
-		system("mkdir ./vid");
-		vid = 1;
-	}
-	unsigned char *data = (unsigned char *)malloc(gl.xres * gl.yres * 3);
-	glReadPixels(0, 0, gl.xres, gl.yres, GL_RGB, GL_UNSIGNED_BYTE, data);
-	char ts[32];
-	sprintf(ts, "./vid/pic%03i.ppm", fnum);
-	FILE *fpo = fopen(ts, "w");
-	if (fpo)
-	{
-		fprintf(fpo, "P6\n%i %i\n255\n", gl.xres, gl.yres);
-		unsigned char *p = data;
-		//go backwards a row at a time...
-		p = p + ((gl.yres - 1) * gl.xres * 3);
-		unsigned char *start = p;
-		for (int i = 0; i < gl.yres; i++)
-		{
-			for (int j = 0; j < gl.xres * 3; j++)
-			{
-				fprintf(fpo, "%c", *p);
-				++p;
-			}
-			start = start - (gl.xres * 3);
-			p = start;
-		}
-		fclose(fpo);
-		char s[256];
-		sprintf(s, "convert ./vid/pic%03i.ppm ./vid/pic%03i.gif", fnum, fnum);
-		system(s);
-		unlink(ts);
-	}
-	++fnum;
-}
 
 int checkKeys(XEvent *e)
 {
@@ -836,7 +734,6 @@ int checkKeys(XEvent *e)
 		//resetGame(gl.gameover, gl.gameScore);
 		break;
 	case XK_s:
-		screenCapture();
 		break;
 	case XK_m:
 		gl.movie ^= 1;
@@ -846,11 +743,6 @@ int checkKeys(XEvent *e)
 		gl.walk ^= 1;
 		break;
 	case XK_e:
-		gl.coin8bit.pos[0] = 200.0;
-		gl.coin8bit.pos[1] = -60.0;
-		gl.coin8bit.pos[2] = 0.0;
-		timers.recordTime(&gl.coin8bit.time);
-		gl.coin8bit.onoff ^= 1;
 		break;
 	case XK_Left:
 		break;
@@ -1042,7 +934,6 @@ void physics(void)
 					gl.camera[0] = 0.0;
 			}
 			//
-
 			if (gl.keys[XK_Right] && gl.keys[XK_f])
 			{
 				gl.scrollingTexture.xc[0] += 0.001;
@@ -1064,8 +955,6 @@ void physics(void)
 				if (gl.camera[0] < 0.0)
 					gl.camera[0] = 0.0;
 			}
-
-			//
 		}
 	}
 }
@@ -1079,7 +968,7 @@ void renderSprite()
 	float w = h * 0.5;
 	glPushMatrix();
 	glColor3f(1.0, 1.0, 1.0);
-	glBindTexture(GL_TEXTURE_2D, gl.walkTexture);
+	glBindTexture(GL_TEXTURE_2D, gl.Rowdy.tex);
 	glEnable(GL_ALPHA_TEST);
 	glAlphaFunc(GL_GREATER, 0.0f);
 	glColor4ub(255, 255, 255, 255);
