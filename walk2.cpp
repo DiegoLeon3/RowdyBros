@@ -94,102 +94,6 @@ public:
 
 class Image;
 
-//---------Set up Monster Class
-class Monster
-{
-public:
-	Vec pos;
-	Vec vel;
-	int nverts;
-	Flt radius;
-	Vec vert[4];
-	float angle;
-	float color[3];
-	struct Monster *prev;
-	struct Monster *next;
-
-public:
-	Monster()
-	{
-		prev = NULL;
-		next = NULL;
-	}
-};
-
-
-class Game
-{
-public:
-	Monster *ahead;
-	int nMonsters;
-
-public:
-	Game()
-	{
-		ahead = NULL;
-		nMonsters = 0;
-		//build 10 Monsters...
-		for (int j = 0; j < 10; j++)
-		{
-			Monster *a = new Monster;
-			a->nverts = 4;
-			a->radius = rnd() * 80.0 + 40.0;
-			Flt r2 = a->radius / 2.0;
-			Flt angle = 0.0f;
-			Flt inc = (PI * 2.0) / (Flt)a->nverts;
-			for (int i = 0; i < a->nverts; i++)
-			{
-				
-				a->vert[i][0] = sin(angle) * (r2 + rnd() * a->radius);
-				a->vert[i][1] = cos(angle) * (r2 + rnd() * a->radius);
-				angle += inc;
-			}
-			a->pos[0] = (Flt)(rand() % 800);
-			a->pos[1] = (Flt)(rand() % 600);
-			a->pos[2] = 0.0f;
-			a->angle = 0.0;
-			a->color[0] = 255;
-			a->color[1] = 215;
-			a->color[2] = 0;
-			a->vel[0] = (Flt)(rnd() * 2.0 - 1.0);
-			a->vel[1] = (Flt)(rnd() * 2.0 - 1.0);
-			//std::cout << "Monster" << std::endl;
-			//add to front of linked list
-			a->next = ahead;
-			if (ahead != NULL)
-				ahead->prev = a;
-			ahead = a;
-			++nMonsters;
-		}
-	}
-	~Game()
-	{
-	}
-} g;
-
-class Sprite
-{
-public:
-	int onoff;
-	int frame;
-	double delay;
-	Vec pos;
-	Image *image;
-	GLuint tex;
-	struct timespec time;
-	Sprite()
-	{
-		onoff = 0;
-		frame = 0;
-		image = NULL;
-		delay = 0.1;
-		pos[0] = 0;
-        pos[1] = 0;
-		pos[2] = 0; 
-
-	}
-};
-
 class Texture
 {
 public:
@@ -214,7 +118,6 @@ public:
 	int quit;
 	int walkFrame;
 	double delay;
-	Sprite Rowdy; 
 	//declaring the bacground and its texture
 	int backgroundFrame;
 	//Adding background Texture for title screen
@@ -241,10 +144,6 @@ public:
 		yres = 900;
 		walk = 0;
 		walkFrame = 0;
-		Rowdy.image = NULL; 
-		Rowdy.pos[0] = (Flt)(-(xres)/2) + 200;
-        Rowdy.pos[1] = (Flt)(-(yres)/2) + 300;
-        Rowdy.pos[2] = 0.0f;
 
 		//walkImage = NULL;
 		backgroundFrame = 0;
@@ -261,6 +160,107 @@ public:
 	}
 } gl;
 
+
+//---------Set up Monster Class
+class Monster
+{
+public:
+	Vec pos;
+	Vec vel;
+	int nverts;
+	Flt radius;
+	Vec vert[4];
+	float angle;
+	float color[3];
+	struct Monster *prev;
+	struct Monster *next;
+
+public:
+	Monster()
+	{
+		prev = NULL;
+		next = NULL;
+	}
+};
+class Sprite
+{
+public:
+	int onoff;
+	int frame;
+	double delay;
+	Vec pos;
+	Image *image;
+	GLuint tex;
+	struct timespec time;
+	Sprite()
+	{
+		onoff = 0;
+		frame = 0;
+		image = NULL;
+		delay = 0.1;
+		pos[0] = 0;
+        pos[1] = 0;
+		pos[2] = 0; 
+
+	}
+};
+
+
+class Game
+{
+public:
+	Monster *ahead;
+	int nMonsters;
+	Sprite Rowdy; 
+
+
+public:
+	Game()
+	{
+		ahead = NULL;
+		nMonsters = 0;
+		Rowdy.image = NULL; 
+		Rowdy.pos[0] = (Flt)(-(gl.xres)/2) + 200;
+        Rowdy.pos[1] = (Flt)(-(gl.yres)/2) + 300;
+        Rowdy.pos[2] = 0.0f;
+		//build 10 Monsters...
+		for (int j = 0; j < 10; j++)
+		{
+			Monster *a = new Monster;
+			a->nverts = 4;
+			a->radius = rnd() * 80.0 + 40.0;
+			Flt r2 = a->radius / 2.0;
+			Flt angle = 0.0f;
+			Flt inc = (PI * 2.0) / (Flt)a->nverts;
+			for (int i = 0; i < a->nverts; i++)
+			{
+				
+				a->vert[i][0] = sin(angle) * (r2 + rnd() * a->radius);
+				a->vert[i][1] = cos(angle) * (r2 + rnd() * a->radius);
+				angle += inc;
+			}
+			a->pos[0] = (Flt)(rand() % gl.xres);
+			a->pos[1] = (Flt)(rand() % gl.yres);
+			a->pos[2] = 0.0f;
+			a->angle = 0.0;
+			a->color[0] = 255;
+			a->color[1] = 215;
+			a->color[2] = 0;
+			a->vel[0] = (Flt)(rnd() * 2.0 - 1.0);
+			a->vel[1] = (Flt)(rnd() * 2.0 - 1.0);
+			//std::cout << "Monster" << std::endl;
+			//add to front of linked list
+			a->next = ahead;
+			if (ahead != NULL)
+				ahead->prev = a;
+			ahead = a;
+			++nMonsters;
+		}
+	}
+	~Game()
+	{
+	}
+} g;
 
 
 void deleteMonster(Game *g, Monster *node)
@@ -290,7 +290,7 @@ void deleteMonster(Game *g, Monster *node)
         node = NULL;
 };
 
-//This builds new Asteroid
+//This builds new Monster
 void buildMonsterFragment(Monster *ta, Monster *a)
 {
 	//build ta from a
@@ -584,34 +584,7 @@ void initOpengl(void)
 	glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, img[4].data);
 
 	//-----------------------------------------------------------
-	//Coin image setup
-	/*
-    glGenTextures(1, &gl.coinTexture);
-    w = img[4].width;
-    h = img[4].height;
-    glBindTexture(GL_TEXTURE_2D, gl.coinTexture);
-    //unsigned char* ftData = buildAlphaData(&img[2]); 
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-     
-     glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h,0, GL_RGB, GL_UNSIGNED_BYTE, img[4].data);
-    */
-
-	/* 
-
-    ////Main Screen Set-up 
-    glGenTextures(1, &gl.scrollingTexture);
-    w = img[3].width; 
-    h = img[3].height; 
-    
-    glBindTexture(GL_TEXTURE_2D, gl.scrollingTexture);
-    //unsigned char* ftData = buildAlphaData(&img[2]); 
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-     
-     glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h,0, GL_RGB, GL_UNSIGNED_BYTE, img[3].data);
-     //-------------------------------------------
-    */
+	
 	gl.scrollingTexture.backImage = &img[3];
 	//create opengl texture elements
 	glGenTextures(1, &gl.scrollingTexture.backTexture);
@@ -635,13 +608,13 @@ void initOpengl(void)
 	h = img[0].height;
 	//
 	//create opengl texture elements
-	glGenTextures(1, &gl.Rowdy.tex);
+	glGenTextures(1, &g.Rowdy.tex);
 
 	//-------------------------------------------------------------------------
 	//silhouette
 	//this is similar to a sprite graphic
 	//
-	glBindTexture(GL_TEXTURE_2D, gl.Rowdy.tex);
+	glBindTexture(GL_TEXTURE_2D, g.Rowdy.tex);
 	//
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -830,7 +803,7 @@ void physics(void)
 			if (gl.keys[XK_Left])
 			{	
 				//edit this to inscrease sprite speed
-				gl.Rowdy.pos[0] -= .5;
+				g.Rowdy.pos[0] -= .5;
 				gl.scrollingTexture.xc[0] -= 0.001;
 				gl.scrollingTexture.xc[1] -= 0.001;
 				if (gl.camera[0] < 0.0)
@@ -838,7 +811,7 @@ void physics(void)
 			}
 			if (gl.keys[XK_Right])
 			{
-				gl.Rowdy.pos[0] += .5;
+				g.Rowdy.pos[0] += .5;
 				 gl.scrollingTexture.xc[0] += 0.001;
 				 gl.scrollingTexture.xc[1] += 0.001;
 				if (gl.camera[0] < 0.0)
@@ -847,7 +820,7 @@ void physics(void)
 			//
 			if (gl.keys[XK_Right] && gl.keys[XK_f])
 			{
-				gl.Rowdy.pos[0] += 1;
+				g.Rowdy.pos[0] += 1;
 				gl.scrollingTexture.xc[0] += 0.01;
 				gl.scrollingTexture.xc[1] += 0.01;
 				if (gl.camera[0] < 0.0)
@@ -856,7 +829,7 @@ void physics(void)
 
 			if (gl.keys[XK_Left] && gl.keys[XK_f])
 			{
-				gl.Rowdy.pos[0] -= 1;
+				g.Rowdy.pos[0] -= 1;
 				gl.scrollingTexture.xc[0] -= 0.01;
 				gl.scrollingTexture.xc[1] -= 0.01;
 				if (gl.camera[0] < 0.0)
@@ -899,7 +872,7 @@ void physics(void)
 	        //is there a bullet within its radius?
 	        int i=0;
 	        while (i < 10) {
-	                if ((gl.Rowdy.pos[0]) ==
+	                if ((g.Rowdy.pos[0]) ==
 					 (a->pos[0])) {
 	                        //std::cout << "Monster hit." << std::endl;
 	                        //this Monster is hit.
@@ -929,9 +902,9 @@ void renderSprite()
 	float w = h * 0.5;
 	glPushMatrix();
 	glColor3f(1.0, 1.0, 1.0);
-	glBindTexture(GL_TEXTURE_2D, gl.Rowdy.tex);
+	glBindTexture(GL_TEXTURE_2D, g.Rowdy.tex);
 	glEnable(GL_ALPHA_TEST);
-	glTranslatef(gl.Rowdy.pos[0], gl.Rowdy.pos[1],gl.Rowdy.pos[2]);
+	glTranslatef(g.Rowdy.pos[0], g.Rowdy.pos[1],g.Rowdy.pos[2]);
 	glAlphaFunc(GL_GREATER, 0.0f);
 	glColor4ub(255, 255, 255, 255);
 	int ix = gl.walkFrame % 8;
