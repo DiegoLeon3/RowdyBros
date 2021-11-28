@@ -26,6 +26,13 @@
 
 #include <GL/glut.h>
 
+#define US_OPENAL_SOUND
+#ifdef USE_OPENAL_SOUND
+#endif
+#include </usr/include/AL/alut.h>
+
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #include "fonts.h"
 #include "sabdulrazzak.cpp"
@@ -418,6 +425,7 @@ int main(void)
 	}
 //	clean_sound();
 	cleanup_fonts();
+	clean_sound();
 	return 0;
 }
 
@@ -937,6 +945,11 @@ void render(void)
     float cx = gl.xres/2.0;
 	float cy = gl.yres/2.0;
     
+<<<<<<< HEAD
+=======
+
+    
+>>>>>>> dc3b4efa2cd7a8f5dd9c9e1f779c3d82c18c3f4c
     //show background/////////////
     show_background(gl.yres, gl.xres, gl.scrollingTexture.backTexture
             ,gl.scrollingTexture.xc, gl.scrollingTexture.yc);
@@ -1067,7 +1080,12 @@ void render(void)
 
 // }
     
+<<<<<<< HEAD
 
+=======
+	//
+	//
+>>>>>>> dc3b4efa2cd7a8f5dd9c9e1f779c3d82c18c3f4c
 	unsigned int c = 0x00ffff44;
 	r.bot = gl.yres - 20;
 	r.left = 10;
@@ -1079,6 +1097,7 @@ void render(void)
 	ggprint8b(&r, 16, c, "right arrow + f -> walk faster");
 	ggprint8b(&r, 16, c, "left arrow  <- walk left");
 	ggprint8b(&r, 16, c, "frame: %i", gl.walkFrame);
+<<<<<<< HEAD
 	ggprint8b(&r, 16, c, "Press C for credits");
 	ggprint8b(&r, 16, c, "Game Score: %i", gl.gameScore);
 	ggprint8b(&r, 16, c, "Press Q to quit");
@@ -1111,6 +1130,23 @@ void render(void)
     } 
 
     //credit screen 
+=======
+			ggprint8b(&r, 16, c, "Press C for credits");
+	    
+	    
+	    if(!gl.title){
+	    glColor3f(0.0,0.0,1.0);
+	    glBegin(GL_QUADS);
+			glVertex2i(-gl.xres, gl.yres);
+			glVertex2i(-gl.xres, -gl.yres);
+			glVertex2i( gl.xres, -gl.yres);
+			glVertex2i( gl.xres, gl.yres);
+		glEnd();
+		glPopMatrix();
+		show_title(gl.yres, gl.xres, gl.backgroundTexture);
+	    } 
+	    //credit screen 
+>>>>>>> dc3b4efa2cd7a8f5dd9c9e1f779c3d82c18c3f4c
     if(gl.creds){
     glColor3f(0.0,0.0,0.0);
     glBegin(GL_QUADS);
@@ -1124,8 +1160,15 @@ void render(void)
         show_ed_creds((gl.yres / 2) + 15 , gl.xres / 2);
         show_diego_creds((gl.yres / 2) + 30 , gl.xres / 2);
         show_javier_creds((gl.yres / 2) + 45 , gl.xres / 2);
-    }
+}
 
+<<<<<<< HEAD
+=======
+	//if (gl.movie) {
+	//	screenCapture();
+	//}
+
+>>>>>>> dc3b4efa2cd7a8f5dd9c9e1f779c3d82c18c3f4c
 }
 
 
