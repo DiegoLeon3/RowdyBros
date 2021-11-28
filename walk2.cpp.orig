@@ -503,7 +503,7 @@ int main(void)
 		render();
 		x11.swapBuffers();
 	}
-//	clean_sound();
+	clean_sound();
 	cleanup_fonts();
 	return 0;
 }
@@ -701,11 +701,6 @@ int checkKeys(XEvent *e)
 	(void)shift;
 <<<<<<< HEAD
 	switch (key) {
-		 case XK_q:
-		 	gl.gameover = 1;
-			clean_sound();
-		 	//resetGame(gl.gameover, gl.gameScore);
-		 	break;
 		case XK_s:
 			screenCapture();
 			break;
@@ -736,8 +731,6 @@ int checkKeys(XEvent *e)
             break;
 	    case XK_p:
             gl.title ^= 1;
-			//sets game score back to zero 
-			//resetGame(gl.gameover, gl.gameScore); 
             break;
         case XK_Down:
 			break;
@@ -755,6 +748,9 @@ int checkKeys(XEvent *e)
         case XK_Escape:
 			return 1;
 			break;
+        case XK_0:
+            exit(0);
+            break;
 =======
 	switch (key)
 	{
@@ -762,9 +758,6 @@ int checkKeys(XEvent *e)
 		gl.gameover = 1;
 		//resetGame(gl.gameover, gl.gameScore);
 		break;
-    case XK_1:
-        exit(0);
-        break; 
 	case XK_s:
 		break;
 	case XK_m:
@@ -808,7 +801,7 @@ int checkKeys(XEvent *e)
 	case XK_Escape:
 		return 1;
 		break;
->>>>>>> a7e9660f4d5608493c749e8497506d74e8819def
+>>>>>>> main
 	}
 	return 0;
 }
