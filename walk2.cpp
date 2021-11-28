@@ -503,7 +503,7 @@ int main(void)
 		render();
 		x11.swapBuffers();
 	}
-	clean_sound();
+//	clean_sound();
 	cleanup_fonts();
 	return 0;
 }
@@ -699,55 +699,63 @@ int checkKeys(XEvent *e)
 		return 0;
 	}
 	(void)shift;
-	switch (key)
-	{
-	case XK_q:
-		gl.gameover = 1;
-		//resetGame(gl.gameover, gl.gameScore);
-		break;
-	case XK_s:
-		break;
-	case XK_m:
-		gl.movie ^= 1;
-		break;
-	case XK_w:
-		timers.recordTime(&timers.walkTime);
-		gl.walk ^= 1;
-		break;
-	case XK_e:
-		break;
-	case XK_Left:
-		break;
-	case XK_f:
-		break;
-	case XK_Right:
-		break;
-	case XK_Up:
-		break;
-	case XK_c:
-		gl.creds ^= 1;
-		break;
-	case XK_p:
-		gl.title ^= 1;
-		//sets game score back to zero
-		//resetGame(gl.gameover, gl.gameScore);
-		break;
-	case XK_Down:
-		break;
-	case XK_equal:
-		gl.delay -= 0.005;
-		if (gl.delay < 0.005)
-			gl.delay = 0.005;
-		break;
-	case XK_minus:
-		gl.delay += 0.005;
-		break;
-	case XK_plus:
-		gl.delay -= 0.005;
-		break;
-	case XK_Escape:
-		return 1;
-		break;
+
+	switch (key) {
+		 case XK_q:
+		 	gl.gameover = 1;
+			clean_sound();
+		 	//resetGame(gl.gameover, gl.gameScore);
+		 	break;
+		case XK_s:
+			screenCapture();
+			break;
+		case XK_m:
+			gl.movie ^= 1;
+			break;
+		case XK_w:
+			timers.recordTime(&timers.walkTime);
+			gl.walk ^= 1;
+			break;
+		case XK_e:
+			gl.exp.pos[0] = 200.0;
+			gl.exp.pos[1] = -60.0;
+			gl.exp.pos[2] =   0.0;
+			timers.recordTime(&gl.exp.time);
+			gl.exp.onoff ^= 1;
+			break;
+		case XK_Left:
+			break;
+		case XK_f:
+			break;
+		case XK_Right:
+			break;
+		case XK_Up:
+			break;
+        case XK_c:
+            gl.creds ^= 1;
+            break;
+	    case XK_p:
+            gl.title ^= 1;
+			//sets game score back to zero 
+			//resetGame(gl.gameover, gl.gameScore); 
+            break;
+        case XK_Down:
+			break;
+		case XK_equal:
+			gl.delay -= 0.005;
+			if (gl.delay < 0.005)
+				gl.delay = 0.005;
+			break;
+		case XK_minus:
+			gl.delay += 0.005;
+			break;
+		case XK_plus:
+			gl.delay -= 0.005;
+			break;	
+        case XK_Escape:
+			return 1;
+			break;
+
 	}
 	return 0;
 }
