@@ -416,7 +416,7 @@ int main(void)
 		render();
 		x11.swapBuffers();
 	}
-//	clean_sound();
+	clean_sound();
 	cleanup_fonts();
 	return 0;
 }
@@ -716,7 +716,6 @@ int checkKeys(XEvent *e)
 	switch (key) {
 		 case XK_q:
 		 	gl.gameover = 1;
-			clean_sound();
 		 	//resetGame(gl.gameover, gl.gameScore);
 		 	break;
 		case XK_s:
