@@ -32,7 +32,7 @@
 
 //defined types
 typedef double Flt;
-typedef double Vec[3];
+typedef float Vec[3];
 typedef Flt Matrix[4][4];
 
 //macros
@@ -126,7 +126,6 @@ public:
 	GLuint gameOverText;
 	Texture scrollingTexture;
 
-	
 	//camera is centered at (0,0) lower-left of screen.
 	Flt camera[2];
 	~Global()
@@ -154,12 +153,10 @@ public:
 		int quit = 0;
 		int titleSound = 1;
 
-	
 		delay = 0.1;
 		memset(keys, 0, 65536);
 	}
 } gl;
-
 
 //---------Set up Monster Class
 class Monster
@@ -174,6 +171,7 @@ public:
 	float color[3];
 	struct Monster *prev;
 	struct Monster *next;
+	Rect cord; 
 
 public:
 	Monster()
@@ -189,42 +187,39 @@ public:
 	int frame;
 	double delay;
 	Vec pos;
+	Vec vel;
 	Image *image;
 	GLuint tex;
 	struct timespec time;
+	Rect cord; 
 	Sprite()
 	{
 		onoff = 0;
 		frame = 0;
 		image = NULL;
 		delay = 0.1;
-		pos[0] = 0;
-        pos[1] = 0;
-		pos[2] = 0; 
-
 	}
 };
-
 
 class Game
 {
 public:
 	Monster *ahead;
 	int nMonsters;
-	Sprite Rowdy; 
-
+	Sprite Rowdy;
 
 public:
 	Game()
 	{
 		ahead = NULL;
 		nMonsters = 0;
-		Rowdy.image = NULL; 
-		Rowdy.pos[0] = (Flt)(-(gl.xres)/2) + 200;
-        Rowdy.pos[1] = (Flt)(-(gl.yres)/2) + 300;
-        Rowdy.pos[2] = 0.0f;
+		Rowdy.image = NULL;
+		Rowdy.pos[0] = -340;
+		Rowdy.pos[1] = -150;
+		Rowdy.pos[2] = 0.0f;
+		Rowdy.vel[0] = (Flt)(rnd() * 2.0 - 1.0);
 		//build 10 Monsters...
-		for (int j = 0; j < 10; j++)
+		for (int j = 0; j < 1; j++)
 		{
 			Monster *a = new Monster;
 			a->nverts = 4;
@@ -234,7 +229,6 @@ public:
 			Flt inc = (PI * 2.0) / (Flt)a->nverts;
 			for (int i = 0; i < a->nverts; i++)
 			{
-				
 				a->vert[i][0] = sin(angle) * (r2 + rnd() * a->radius);
 				a->vert[i][1] = cos(angle) * (r2 + rnd() * a->radius);
 				angle += inc;
@@ -262,32 +256,40 @@ public:
 	}
 } g;
 
-
 void deleteMonster(Game *g, Monster *node)
 {
-        //Remove a node from doubly-linked list
-        //Must look at 4 special cases below.
-        if (node->prev == NULL) {
-                if (node->next == NULL) {
-                        //only 1 item in list.
-                        g->ahead = NULL;
-                } else {
-                        //at beginning of list.
-                        node->next->prev = NULL;
-                        g->ahead = node->next;
-                }
-        } else {
-                if (node->next == NULL) {
-                        //at end of list.
-                        node->prev->next = NULL;
-                } else {
-                        //in middle of list.
-                        node->prev->next = node->next;
-                        node->next->prev = node->prev;
-                }
-        }
-        delete node;
-        node = NULL;
+	//Remove a node from doubly-linked list
+	//Must look at 4 special cases below.
+	if (node->prev == NULL)
+	{
+		if (node->next == NULL)
+		{
+			//only 1 item in list.
+			g->ahead = NULL;
+		}
+		else
+		{
+			//at beginning of list.
+			node->next->prev = NULL;
+			g->ahead = node->next;
+		}
+	}
+	else
+	{
+		if (node->next == NULL)
+		{
+			//at end of list.
+			node->prev->next = NULL;
+		}
+		else
+		{
+			//in middle of list.
+			node->prev->next = node->next;
+			node->next->prev = node->prev;
+		}
+	}
+	delete node;
+	node = NULL;
 };
 
 //This builds new Monster
@@ -503,7 +505,7 @@ int main(void)
 		render();
 		x11.swapBuffers();
 	}
-	clean_sound();
+	//	clean_sound();
 	cleanup_fonts();
 	return 0;
 }
@@ -584,7 +586,7 @@ void initOpengl(void)
 	glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, img[4].data);
 
 	//-----------------------------------------------------------
-	
+
 	gl.scrollingTexture.backImage = &img[3];
 	//create opengl texture elements
 	glGenTextures(1, &gl.scrollingTexture.backTexture);
@@ -624,7 +626,6 @@ void initOpengl(void)
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0,
 				 GL_RGBA, GL_UNSIGNED_BYTE, walkData);
 	free(walkData);
-
 }
 
 void init()
@@ -676,7 +677,6 @@ void checkMouse(XEvent *e)
 	}
 }
 
-
 int checkKeys(XEvent *e)
 {
 	//keyboard input?
@@ -699,10 +699,12 @@ int checkKeys(XEvent *e)
 		return 0;
 	}
 	(void)shift;
+
 	switch (key)
 	{
 	case XK_q:
 		gl.gameover = 1;
+		clean_sound();
 		//resetGame(gl.gameover, gl.gameScore);
 		break;
 	case XK_s:
@@ -783,68 +785,82 @@ void physics(void)
 	//}
 
 	//-------------------------
-	
-	if (gl.walk || gl.keys[XK_Right] || gl.keys[XK_Left])
-	{
-		//man is walking...
-		//when time is up, advance the frame.
-		timers.recordTime(&timers.timeCurrent);
-		double timeSpan = timers.timeDiff(&timers.walkTime, &timers.timeCurrent);
-		if (timeSpan > gl.delay)
-		{
-			//advance
-			++gl.walkFrame;
-			if (gl.walkFrame >= 16)
-				gl.walkFrame -= 16;
-			timers.recordTime(&timers.walkTime);
-		}
-		for (int i = 0; i < 20; i++)
-		{
-			if (gl.keys[XK_Left])
-			{	
-				//edit this to inscrease sprite speed
-				g.Rowdy.pos[0] -= .5;
-				gl.scrollingTexture.xc[0] -= 0.001;
-				gl.scrollingTexture.xc[1] -= 0.001;
-				if (gl.camera[0] < 0.0)
-					gl.camera[0] = 0.0;
-			}
-			if (gl.keys[XK_Right])
-			{
-				g.Rowdy.pos[0] += .5;
-				 gl.scrollingTexture.xc[0] += 0.001;
-				 gl.scrollingTexture.xc[1] += 0.001;
-				if (gl.camera[0] < 0.0)
-					gl.camera[0] = 0.0;
-			}
-			//
-			if (gl.keys[XK_Right] && gl.keys[XK_f])
-			{
-				g.Rowdy.pos[0] += 1;
-				gl.scrollingTexture.xc[0] += 0.01;
-				gl.scrollingTexture.xc[1] += 0.01;
-				if (gl.camera[0] < 0.0)
-					gl.camera[0] = 0.0;
-			}
-
-			if (gl.keys[XK_Left] && gl.keys[XK_f])
-			{
-				g.Rowdy.pos[0] -= 1;
-				gl.scrollingTexture.xc[0] -= 0.01;
-				gl.scrollingTexture.xc[1] -= 0.01;
-				if (gl.camera[0] < 0.0)
-					gl.camera[0] = 0.0;
-			}
-		}
-	}
-
-	//Update Monster positions
 	Monster *a = g.ahead;
 	while (a)
 	{
 		a->pos[0] += a->vel[0];
 		a->pos[1] += a->vel[1];
-		//Check for collision with window edges
+
+		if (gl.walk || gl.keys[XK_Right] || gl.keys[XK_Left])
+		{
+			//man is walking...
+			//when time is up, advance the frame.
+			timers.recordTime(&timers.timeCurrent);
+			double timeSpan = timers.timeDiff(&timers.walkTime, &timers.timeCurrent);
+			if (timeSpan > gl.delay)
+			{
+				//advance
+				++gl.walkFrame;
+				if (gl.walkFrame >= 16)
+					gl.walkFrame -= 16;
+				timers.recordTime(&timers.walkTime);
+			}
+			for (int i = 0; i < 20; i++)
+			{
+				if (gl.keys[XK_Left])
+				{
+					//edit this to inscrease sprite speed
+					if (!(g.Rowdy.pos[0] <= -450))
+					{
+						g.Rowdy.pos[0] -= g.Rowdy.vel[0];
+					}
+					gl.scrollingTexture.xc[0] -= 0.00001;
+					gl.scrollingTexture.xc[1] -= 0.00001;
+					a->pos[0] += .1;
+
+					if (gl.camera[0] < 0.0)
+						gl.camera[0] = 0.0;
+				}
+				if (gl.keys[XK_Right])
+				{
+					if ((g.Rowdy.pos[0] <= 20))
+					{
+						g.Rowdy.pos[0] += g.Rowdy.vel[0];
+					}
+					gl.scrollingTexture.xc[0] += 0.00001;
+					gl.scrollingTexture.xc[1] += 0.00001;
+					a->pos[0] -= .1;
+
+					if (gl.camera[0] < 0.0)
+						gl.camera[0] = 0.0;
+				}
+				//
+				if (gl.keys[XK_Right] && gl.keys[XK_f])
+				{
+					if ((g.Rowdy.pos[0] <= 20))
+					{
+						g.Rowdy.pos[0] += .25;
+					}
+					gl.scrollingTexture.xc[0] += 0.0001;
+					gl.scrollingTexture.xc[1] += 0.0001;
+					
+					if (gl.camera[0] < 0.0)
+						gl.camera[0] = 0.0;
+				}
+
+				if (gl.keys[XK_Left] && gl.keys[XK_f])
+				{
+					if (!(g.Rowdy.pos[0] == -450))
+					{
+						g.Rowdy.pos[0] -= .25;
+						gl.scrollingTexture.xc[0] -= 0.00001;
+						gl.scrollingTexture.xc[1] -= 0.00001;
+						if (gl.camera[0] < 0.0)
+							gl.camera[0] = 0.0;
+					}
+				}
+			}
+		}
 		if (a->pos[0] < -100.0)
 		{
 			a->pos[0] += (float)gl.xres + 200;
@@ -861,38 +877,45 @@ void physics(void)
 		{
 			a->pos[1] -= (float)gl.yres + 200;
 		}
+
 		a = a->next;
 	}
-	//
+
 	//Monster collision with Sprite?
 	//If collision detected:
 	//     1. delete the MOnster
 	a = g.ahead;
-	while (a) {
-	        //is there a bullet within its radius?
-	        int i=0;
-	        while (i < 10) {
-	                if ((g.Rowdy.pos[0]) ==
-					 (a->pos[0])) {
-	                        //std::cout << "Monster hit." << std::endl;
-	                        //this Monster is hit.
-	                                Monster *savea = a->next;
-	                                deleteMonster(&g, a);
-	                                a = savea;
-	                                g.nMonsters--;
-	                        //delete the bullet... 
-	                }
-	                i++;
-	        }
-	        if (a == NULL)
-	                break;
-	        a = a->next;
+	while (a)
+	{
+		//is there a bullet within its radius?
+		int i = 0;
+		while (i < 1)
+		{
+			printf("Rowdy %f \n", g.Rowdy.pos[0]);
+			printf("Monster %f \n", ceil(a->pos[0]));
+			//GetWindowRect(window, &rect);
+				//int x = rect.left;
+				//int y = rect.top;	
+			//if ((g.Rowdy.pos[1] + 70) == ceil(a->pos[1]))
+			// {
+			// 	//printf("Rowdy %f \n", g.Rowdy.pos[0] + 70);
+			// 	//printf("Monster %f \n", ceil(a->pos[0]));
+			// 	//this Monster is hit
+			// 	Monster *savea = a->next;
+			// 	deleteMonster(&g, a);
+			// 	a = savea;
+			// 	g.nMonsters--;
+			// 	//delete the Mosnter
+			// }
+			i++;
+		}
+		if (a == NULL)
+			break;
+		a = a->next;
 	}
 	//---------------------------------------------
 	//-----------------------
-
 }
-
 
 void renderSprite()
 {
@@ -904,7 +927,7 @@ void renderSprite()
 	glColor3f(1.0, 1.0, 1.0);
 	glBindTexture(GL_TEXTURE_2D, g.Rowdy.tex);
 	glEnable(GL_ALPHA_TEST);
-	glTranslatef(g.Rowdy.pos[0], g.Rowdy.pos[1],g.Rowdy.pos[2]);
+	glTranslatef(g.Rowdy.pos[0], g.Rowdy.pos[1], g.Rowdy.pos[2]);
 	glAlphaFunc(GL_GREATER, 0.0f);
 	glColor4ub(255, 255, 255, 255);
 	int ix = gl.walkFrame % 8;
@@ -960,6 +983,8 @@ void renderScreenText()
 	ggprint8b(&r, 16, c, "Press Q to quit");
 }
 
+
+
 void renderTitleScreen()
 {
 	glColor3f(0.0, 0.0, 1.0);
@@ -971,8 +996,9 @@ void renderTitleScreen()
 	glEnd();
 	glPopMatrix();
 	show_title(gl.yres, gl.xres, gl.backgroundTexture);
-	play_sound();
+	//play_sound();
 }
+
 void renderGameOverScreen()
 {
 	glColor3f(0.0, 0.0, 1.0);
@@ -985,8 +1011,6 @@ void renderGameOverScreen()
 	glPopMatrix();
 	show_title(gl.yres, gl.xres, gl.gameOverText);
 }
-
-
 
 void renderCredits()
 {
@@ -1004,15 +1028,8 @@ void renderCredits()
 	show_javier_creds((gl.yres / 2) + 45, gl.xres / 2);
 }
 
-void render(void)
-{
-	show_background(gl.yres, gl.xres, gl.scrollingTexture.backTexture, gl.scrollingTexture.xc, gl.scrollingTexture.yc);
-	renderSprite();
-	renderScreenText();
-	//--------------
-	//Draw the Monsters
-	{
-		Monster *a = g.ahead;
+void renderMonsters(){
+Monster *a = g.ahead;
 		while (a)
 		{
 			//Log("draw Monster...\n");
@@ -1039,10 +1056,14 @@ void render(void)
 			glEnd();
 			a = a->next;
 		}
-	}
+}
 
-
-
+void render(void)
+{
+	show_background(gl.yres, gl.xres, gl.scrollingTexture.backTexture, gl.scrollingTexture.xc, gl.scrollingTexture.yc);
+	renderSprite();
+	renderScreenText();
+	renderMonsters();
 	if (!gl.title)
 	{
 		renderTitleScreen();
