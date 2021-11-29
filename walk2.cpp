@@ -32,7 +32,7 @@
 
 //defined types
 typedef double Flt;
-typedef double Vec[3];
+typedef float Vec[3];
 typedef Flt Matrix[4][4];
 
 //macros
@@ -171,6 +171,7 @@ public:
 	float color[3];
 	struct Monster *prev;
 	struct Monster *next;
+	Rect cord; 
 
 public:
 	Monster()
@@ -186,18 +187,17 @@ public:
 	int frame;
 	double delay;
 	Vec pos;
+	Vec vel;
 	Image *image;
 	GLuint tex;
 	struct timespec time;
+	Rect cord; 
 	Sprite()
 	{
 		onoff = 0;
 		frame = 0;
 		image = NULL;
 		delay = 0.1;
-		// pos[0] = 0;
-		// pos[1] = 0;
-		// pos[2] = 0;
 	}
 };
 
@@ -217,8 +217,9 @@ public:
 		Rowdy.pos[0] = -340;
 		Rowdy.pos[1] = -150;
 		Rowdy.pos[2] = 0.0f;
+		Rowdy.vel[0] = (Flt)(rnd() * 2.0 - 1.0);
 		//build 10 Monsters...
-		for (int j = 0; j < 10; j++)
+		for (int j = 0; j < 1; j++)
 		{
 			Monster *a = new Monster;
 			a->nverts = 4;
@@ -228,7 +229,6 @@ public:
 			Flt inc = (PI * 2.0) / (Flt)a->nverts;
 			for (int i = 0; i < a->nverts; i++)
 			{
-
 				a->vert[i][0] = sin(angle) * (r2 + rnd() * a->radius);
 				a->vert[i][1] = cos(angle) * (r2 + rnd() * a->radius);
 				angle += inc;
@@ -812,7 +812,7 @@ void physics(void)
 					//edit this to inscrease sprite speed
 					if (!(g.Rowdy.pos[0] <= -450))
 					{
-						g.Rowdy.pos[0] -= .25;
+						g.Rowdy.pos[0] -= g.Rowdy.vel[0];
 					}
 					gl.scrollingTexture.xc[0] -= 0.00001;
 					gl.scrollingTexture.xc[1] -= 0.00001;
@@ -825,7 +825,7 @@ void physics(void)
 				{
 					if ((g.Rowdy.pos[0] <= 20))
 					{
-						g.Rowdy.pos[0] += .25;
+						g.Rowdy.pos[0] += g.Rowdy.vel[0];
 					}
 					gl.scrollingTexture.xc[0] += 0.00001;
 					gl.scrollingTexture.xc[1] += 0.00001;
@@ -853,8 +853,8 @@ void physics(void)
 					if (!(g.Rowdy.pos[0] == -450))
 					{
 						g.Rowdy.pos[0] -= .25;
-						gl.scrollingTexture.xc[0] -= 0.0001;
-						gl.scrollingTexture.xc[1] -= 0.0001;
+						gl.scrollingTexture.xc[0] -= 0.00001;
+						gl.scrollingTexture.xc[1] -= 0.00001;
 						if (gl.camera[0] < 0.0)
 							gl.camera[0] = 0.0;
 					}
@@ -889,10 +889,13 @@ void physics(void)
 	{
 		//is there a bullet within its radius?
 		int i = 0;
-		while (i < 10)
+		while (i < 1)
 		{
-			//printf("Rowdy %f \n", g.Rowdy.pos[0]);
-			//printf("Monster %f \n", ceil(a->pos[0]));
+			printf("Rowdy %f \n", g.Rowdy.pos[0]);
+			printf("Monster %f \n", ceil(a->pos[0]));
+			//GetWindowRect(window, &rect);
+				//int x = rect.left;
+				//int y = rect.top;	
 			//if ((g.Rowdy.pos[1] + 70) == ceil(a->pos[1]))
 			// {
 			// 	//printf("Rowdy %f \n", g.Rowdy.pos[0] + 70);
@@ -980,6 +983,8 @@ void renderScreenText()
 	ggprint8b(&r, 16, c, "Press Q to quit");
 }
 
+
+
 void renderTitleScreen()
 {
 	glColor3f(0.0, 0.0, 1.0);
@@ -991,7 +996,7 @@ void renderTitleScreen()
 	glEnd();
 	glPopMatrix();
 	show_title(gl.yres, gl.xres, gl.backgroundTexture);
-	play_sound();
+	//play_sound();
 }
 
 void renderGameOverScreen()
@@ -1023,15 +1028,8 @@ void renderCredits()
 	show_javier_creds((gl.yres / 2) + 45, gl.xres / 2);
 }
 
-void render(void)
-{
-	show_background(gl.yres, gl.xres, gl.scrollingTexture.backTexture, gl.scrollingTexture.xc, gl.scrollingTexture.yc);
-	renderSprite();
-	renderScreenText();
-	//--------------
-	//Draw the Monsters
-	{
-		Monster *a = g.ahead;
+void renderMonsters(){
+Monster *a = g.ahead;
 		while (a)
 		{
 			//Log("draw Monster...\n");
@@ -1058,7 +1056,14 @@ void render(void)
 			glEnd();
 			a = a->next;
 		}
-	}
+}
+
+void render(void)
+{
+	show_background(gl.yres, gl.xres, gl.scrollingTexture.backTexture, gl.scrollingTexture.xc, gl.scrollingTexture.yc);
+	renderSprite();
+	renderScreenText();
+	renderMonsters();
 	if (!gl.title)
 	{
 		renderTitleScreen();
