@@ -166,12 +166,13 @@ public:
 	Vec vel;
 	int nverts;
 	Flt radius;
-	Vec vert[4];
+	float pts[100][2];
+	//Vec vert[4];
 	float angle;
 	float color[3];
 	struct Monster *prev;
 	struct Monster *next;
-	Rect cord; 
+	Rect cord;
 
 public:
 	Monster()
@@ -186,18 +187,22 @@ public:
 	int onoff;
 	int frame;
 	double delay;
+	float pts[100][2];
+	int x,y; 
 	Vec pos;
 	Vec vel;
 	Image *image;
 	GLuint tex;
 	struct timespec time;
-	Rect cord; 
+	Rect cord;
 	Sprite()
 	{
 		onoff = 0;
 		frame = 0;
 		image = NULL;
 		delay = 0.1;
+		
+
 	}
 };
 
@@ -207,6 +212,7 @@ public:
 	Monster *ahead;
 	int nMonsters;
 	Sprite Rowdy;
+	
 
 public:
 	Game()
@@ -216,21 +222,20 @@ public:
 		Rowdy.image = NULL;
 		Rowdy.pos[0] = -340;
 		Rowdy.pos[1] = -150;
-		Rowdy.pos[2] = 0.0f;
+		// Rowdy.pos[2] = 0.0f;
 		Rowdy.vel[0] = (Flt)(rnd() * 2.0 - 1.0);
 		//build 10 Monsters...
 		for (int j = 0; j < 1; j++)
 		{
 			Monster *a = new Monster;
-			a->nverts = 4;
-			a->radius = rnd() * 80.0 + 40.0;
-			Flt r2 = a->radius / 2.0;
-			Flt angle = 0.0f;
-			Flt inc = (PI * 2.0) / (Flt)a->nverts;
+			a->nverts = 10;
+			a->radius = 15;
+			float angle = 0.0;
+			Flt inc = (PI * 2.0) / (float)a->nverts;
 			for (int i = 0; i < a->nverts; i++)
 			{
-				a->vert[i][0] = sin(angle) * (r2 + rnd() * a->radius);
-				a->vert[i][1] = cos(angle) * (r2 + rnd() * a->radius);
+				a->pts[i][0] = cos(angle) * a->radius;
+				a->pts[i][1] = sin(angle) * a->radius;
 				angle += inc;
 			}
 			a->pos[0] = (Flt)(rand() % gl.xres);
@@ -303,8 +308,8 @@ void buildMonsterFragment(Monster *ta, Monster *a)
 	Flt inc = (PI * 2.0) / (Flt)ta->nverts;
 	for (int i = 0; i < ta->nverts; i++)
 	{
-		ta->vert[i][0] = sin(angle) * (r2 + rnd() * ta->radius);
-		ta->vert[i][1] = cos(angle) * (r2 + rnd() * ta->radius);
+		ta->pts[i][0] = sin(angle) * (r2 + rnd() * ta->radius);
+		ta->pts[i][1] = cos(angle) * (r2 + rnd() * ta->radius);
 		angle += inc;
 	}
 	ta->pos[0] = a->pos[0] + rnd() * 10.0 - 5.0;
@@ -608,6 +613,8 @@ void initOpengl(void)
 	//
 	w = img[0].width;
 	h = img[0].height;
+	g.Rowdy.x = w/2; 
+	g.Rowdy.y = h/2; 
 	//
 	//create opengl texture elements
 	glGenTextures(1, &g.Rowdy.tex);
@@ -776,6 +783,8 @@ Flt VecNormalize(Vec vec)
 
 void physics(void)
 {
+	Flt d0, d1, dist;
+
 	if (gl.gameover)
 		return;
 	//to move backgriund when player is in motion
@@ -843,7 +852,7 @@ void physics(void)
 					}
 					gl.scrollingTexture.xc[0] += 0.0001;
 					gl.scrollingTexture.xc[1] += 0.0001;
-					
+
 					if (gl.camera[0] < 0.0)
 						gl.camera[0] = 0.0;
 				}
@@ -891,22 +900,21 @@ void physics(void)
 		int i = 0;
 		while (i < 1)
 		{
-			printf("Rowdy %f \n", g.Rowdy.pos[0]);
-			printf("Monster %f \n", ceil(a->pos[0]));
-			//GetWindowRect(window, &rect);
-				//int x = rect.left;
-				//int y = rect.top;	
-			//if ((g.Rowdy.pos[1] + 70) == ceil(a->pos[1]))
-			// {
-			// 	//printf("Rowdy %f \n", g.Rowdy.pos[0] + 70);
-			// 	//printf("Monster %f \n", ceil(a->pos[0]));
-			// 	//this Monster is hit
-			// 	Monster *savea = a->next;
-			// 	deleteMonster(&g, a);
-			// 	a = savea;
-			// 	g.nMonsters--;
-			// 	//delete the Mosnter
-			// }
+			d0 = a->pos[0] - g.Rowdy.pos[0];
+			d1 = a->pos[1] - g.Rowdy.pos[1];
+			dist = (d0 * d0 + d1 * d1);
+			printf("X %i, Y %i\n", g.Rowdy.x, g.Rowdy.y);
+			if ((dist < (a->radius * a->radius)))
+			{
+				 printf("Rowdy %f \n");
+				// //printf("Monster %f \n", ceil(a->pos[0]));
+				// //this Monster is hit
+				// Monster *savea = a->next;
+				// deleteMonster(&g, a);
+				// a = savea;
+				// g.nMonsters--;
+				// //delete the Mosnter
+			}
 			i++;
 		}
 		if (a == NULL)
@@ -960,9 +968,33 @@ void renderSprite()
 		glVertex2i(cx + w, cy - h);
 	}
 	glEnd();
-	glPopMatrix();
+	// glPopMatrix();
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_ALPHA_TEST);
+
+	// glPushMatrix();
+	glColor3ub(255, 215, 0);
+
+	int n = 10;
+	float ang = 0.0;
+	float inc = (3.14159 * 2.0) / (float)n;
+	float pts[100][2];
+	for (int i = 0; i < n; i++)
+	{
+		pts[i][0] = cos(ang) * 100;
+		pts[i][1] = sin(ang) * 100;
+		ang += inc;
+	}
+	for (int i = 0; i < n; i++)
+	{
+
+		int j = (i + 1) % n;
+		glBegin(GL_LINES);
+		glVertex2f(pts[i][0], pts[i][1]);
+		glVertex2f(pts[j][0], pts[j][1]);
+		glEnd();
+	}
+	glPopMatrix();
 }
 
 void renderScreenText()
@@ -983,10 +1015,9 @@ void renderScreenText()
 	ggprint8b(&r, 16, c, "Press Q to quit");
 }
 
-
-
 void renderTitleScreen()
 {
+	glPushMatrix();
 	glColor3f(0.0, 0.0, 1.0);
 	glBegin(GL_QUADS);
 	glVertex2i(-gl.xres, gl.yres);
@@ -1001,6 +1032,7 @@ void renderTitleScreen()
 
 void renderGameOverScreen()
 {
+	glPushMatrix();
 	glColor3f(0.0, 0.0, 1.0);
 	glBegin(GL_QUADS);
 	glVertex2i(-gl.xres, gl.yres);
@@ -1014,6 +1046,7 @@ void renderGameOverScreen()
 
 void renderCredits()
 {
+	glPushMatrix();
 	glColor3f(0.0, 0.0, 0.0);
 	glBegin(GL_QUADS);
 	glVertex2i(-gl.xres, gl.yres);
@@ -1028,34 +1061,30 @@ void renderCredits()
 	show_javier_creds((gl.yres / 2) + 45, gl.xres / 2);
 }
 
-void renderMonsters(){
-Monster *a = g.ahead;
-		while (a)
+void renderMonsters()
+{
+	Monster *a = g.ahead;
+	while (a)
+	{
+		//Log("draw Monster...\n");
+		glPushMatrix();
+		glColor3fv(a->color);
+		glTranslatef(a->pos[0], a->pos[1], a->pos[2]);
+		//glRotatef(a->angle, 0.0f, 0.0f, 1.0f);
+
+		//glBegin(GL_LINE_LOOP);
+		//Log("%i verts\n",a->nverts);
+		for (int i = 0; i < a->nverts; i++)
 		{
-			//Log("draw Monster...\n");
-			glColor3fv(a->color);
-			glPushMatrix();
-			glTranslatef(a->pos[0], a->pos[1], a->pos[2]);
-			glRotatef(a->angle, 0.0f, 0.0f, 1.0f);
-			glBegin(GL_POLYGON);
-			//glBegin(GL_LINE_LOOP);
-			//Log("%i verts\n",a->nverts);
-			for (int j = 0; j < a->nverts; j++)
-			{
-				glVertex2f(a->vert[j][0], a->vert[j][1]);
-			}
+			glBegin(GL_LINE_LOOP);
+			int j = (i + 1) % a->nverts;
+			glVertex2f(a->pts[i][0], a->pts[i][1]);
+			glVertex2f(a->pts[j][0], a->pts[j][1]);
 			glEnd();
-			//glBegin(GL_LINES);
-			//      glVertex2f(0,   0);
-			//      glVertex2f(a->radius, 0);
-			//glEnd();
-			glPopMatrix();
-			glColor3f(0.0f, 0.0f, 0.0f);
-			glBegin(GL_POINTS);
-			glVertex2f(a->pos[0], a->pos[1]);
-			glEnd();
-			a = a->next;
 		}
+		glPopMatrix();
+		a = a->next;
+	}
 }
 
 void render(void)
@@ -1064,6 +1093,31 @@ void render(void)
 	renderSprite();
 	renderScreenText();
 	renderMonsters();
+
+	// 	glPushMatrix();
+	// 	glColor3ub(255,255,255);
+	// 	glTranslatef(gl.xres/2, gl.yres/2, 0);
+
+	// 	int n = 10;
+	// 	float ang = 0.0;
+	// 	float inc = (3.14159 * 2.0) / (float) n;
+	// 	float pts[100][2];
+	// 	for (int i = 0; i < n; i++)
+	// 	{
+	// 		pts[i][0] = cos(ang) * 100;
+	// 		pts[i][1] = sin(ang) * 100;
+	// 		ang += inc;
+	// 	}
+	// 		for (int i = 0; i < n; i++)
+	// {
+
+	// 				int j = (i +1) % n;
+	// 				glBegin(GL_LINES);
+	// 				glVertex2f(pts[i][0], pts[i][1]);
+	// 				glVertex2f(pts[j][0], pts[j][1]);
+	// 				glEnd();
+	// }
+
 	if (!gl.title)
 	{
 		renderTitleScreen();
@@ -1077,5 +1131,4 @@ void render(void)
 		renderCredits();
 	}
 	///Comment
-	
 }
