@@ -2,10 +2,7 @@
 //program: walk2.cpp
 //original author:  Gordon Griesel
 //date:    fall 21
-//
-//Walk cycle using a sprite sheet.
-//images courtesy: http://games.ucla.edu/resource/walk-cycles/
-//
+
 //This program includes:
 //  multiple sprite-sheet animations
 //  a level tiling system
@@ -29,6 +26,9 @@
 #include "dleon.cpp"
 #include "ekyles.cpp"
 #include "jmedina2.cpp"
+#ifdef USE_OPENAL_SOUND
+#include </usr/include/AL/alut.h>
+#endif //USE_OPENAL_SOUND
 
 //defined types
 typedef double Flt;
@@ -61,7 +61,7 @@ int checkKeys(XEvent *e);
 void init();
 void physics();
 void render();
-void restart(); 
+void restart();
 //-----------------------------------------------------------------------------
 //Setup timers
 class Timers
@@ -148,11 +148,6 @@ public:
 		backgroundFrame = 0;
 		backgroundImage = NULL;
 
-		int gameover = 0;
-		int gameScore = 0;
-		int quit = 0;
-		int titleSound = 1;
-
 		delay = 0.1;
 		memset(keys, 0, 65536);
 	}
@@ -167,7 +162,6 @@ public:
 	int nverts;
 	Flt radius;
 	float pts[100][2];
-	//Vec vert[4];
 	float angle;
 	float color[3];
 	struct Monster *prev;
@@ -188,7 +182,7 @@ public:
 	int frame;
 	double delay;
 	float pts[100][2];
-	int x,y; 
+	int x, y;
 	Vec pos;
 	Vec vel;
 	Image *image;
@@ -201,8 +195,6 @@ public:
 		frame = 0;
 		image = NULL;
 		delay = 0.1;
-		
-
 	}
 };
 
@@ -212,8 +204,8 @@ public:
 	Monster *ahead;
 	int nMonsters;
 	Sprite Rowdy;
-	Sprite radius; 
-	
+	Sprite radius;
+
 public:
 	Game()
 	{
@@ -222,11 +214,10 @@ public:
 		Rowdy.image = NULL;
 		Rowdy.pos[0] = -340;
 		Rowdy.pos[1] = -150;
-		// Rowdy.pos[2] = 0.0f;
 		Rowdy.vel[0] = (Flt)(rnd() * 2.0 - 1.0);
 		//build 10 Monsters...
-		radius.pos[0] = gl.xres/5 - 45; 
-		radius.pos[1] = gl.yres/5 + 35;
+		radius.pos[0] = gl.xres / 5 - 45;
+		radius.pos[1] = gl.yres / 5 + 35;
 		radius.vel[0] = (Flt)(rnd() * 2.0 - 1.0);
 		for (int j = 0; j < 10; j++)
 		{
@@ -250,7 +241,6 @@ public:
 			a->color[2] = 158;
 			a->vel[0] = (Flt)(rnd() * 2.0 - 1.0);
 			a->vel[1] = (Flt)(rnd() * 2.0 - 1.0);
-			//std::cout << "Monster" << std::endl;
 			//add to front of linked list
 			a->next = ahead;
 			if (ahead != NULL)
@@ -261,8 +251,7 @@ public:
 	}
 	~Game()
 	{
-		 delete [] ahead;
-
+		delete[] ahead;
 	}
 } g;
 
@@ -326,7 +315,6 @@ void buildMonsterFragment(Monster *ta, Monster *a)
 	ta->color[2] = 0.5;
 	ta->vel[0] = a->vel[0] + (rnd() * 2.0 - 1.0);
 	ta->vel[1] = a->vel[1] + (rnd() * 2.0 - 1.0);
-	//std::cout << "frag" << std::endl;
 };
 
 //X Windows variables
@@ -356,7 +344,6 @@ public:
 	X11_wrapper()
 	{
 		GLint att[] = {GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None};
-		//GLint att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, None };
 		XSetWindowAttributes swa;
 		setupScreenRes(gl.xres, gl.yres);
 		dpy = XOpenDisplay(NULL);
@@ -434,7 +421,6 @@ public:
 	{
 		if (fname[0] == '\0')
 			return;
-		//printf("fname **%s**\n", fname);
 		int ppmFlag = 0;
 		char name[40];
 		strcpy(name, fname);
@@ -449,16 +435,11 @@ public:
 		else
 		{
 			name[slen - 4] = '\0';
-			//printf("name **%s**\n", name);
 			sprintf(ppmname, "%s.ppm", name);
-			//printf("ppmname **%s**\n", ppmname);
 			char ts[100];
-			//system("convert eball.jpg eball.ppm");
 			sprintf(ts, "convert %s %s", fname, ppmname);
 			system(ts);
 		}
-		//sprintf(ts, "%s", name);
-		//printf("read ppm **%s**\n", ppmname); fflush(stdout);
 		FILE *fpi = fopen(ppmname, "r");
 		if (fpi)
 		{
@@ -499,7 +480,7 @@ int main(void)
 
 	initOpengl();
 	init();
-
+	playSound();
 	int done = 0;
 	while (!done)
 	{
@@ -515,8 +496,7 @@ int main(void)
 		render();
 		x11.swapBuffers();
 	}
-	//	clean_sound();
-	cleanup_fonts();
+	cleanSound();
 	return 0;
 }
 
@@ -618,8 +598,8 @@ void initOpengl(void)
 	//
 	w = img[0].width;
 	h = img[0].height;
-	g.Rowdy.x = w/2; 
-	g.Rowdy.y = h/2; 
+	g.Rowdy.x = w / 2;
+	g.Rowdy.y = h / 2;
 	//
 	//create opengl texture elements
 	glGenTextures(1, &g.Rowdy.tex);
@@ -646,8 +626,6 @@ void init()
 
 void checkMouse(XEvent *e)
 {
-	//printf("checkMouse()...\n"); fflush(stdout);
-	//Did the mouse move?
 	//Was a mouse button clicked?
 	static int savex = 0;
 	static int savey = 0;
@@ -655,9 +633,6 @@ void checkMouse(XEvent *e)
 	if (e->type != ButtonRelease && e->type != ButtonPress &&
 		e->type != MotionNotify)
 		return;
-
-	int mx = e->xbutton.x;
-	int my = e->xbutton.y;
 
 	if (e->type == ButtonRelease)
 	{
@@ -668,7 +643,6 @@ void checkMouse(XEvent *e)
 		if (e->xbutton.button == 1)
 		{
 			//Left button is down
-			//makeParticle(mx,my,gl.monster, gl.yres);
 		}
 		if (e->xbutton.button == 3)
 		{
@@ -682,9 +656,6 @@ void checkMouse(XEvent *e)
 			//Mouse moved
 			savex = e->xbutton.x;
 			savey = e->xbutton.y;
-
-			//for(int i =0; i<5; i++)
-			//makeParticle(savex,savey,gl.monster, gl.yres);
 		}
 	}
 }
@@ -716,7 +687,6 @@ int checkKeys(XEvent *e)
 	{
 	case XK_q:
 		gl.gameover = 1;
-		clean_sound();
 		//resetGame(gl.gameover, gl.gameScore);
 		break;
 	case XK_s:
@@ -743,12 +713,10 @@ int checkKeys(XEvent *e)
 		break;
 	case XK_p:
 		gl.title ^= 1;
-		//sets game score back to zero
-		//resetGame(gl.gameover, gl.gameScore);
 		break;
-    case XK_r:
-        restart();
-        break; 
+	case XK_r:
+		restart();
+		break;
 	case XK_Down:
 		break;
 	case XK_equal:
@@ -795,19 +763,13 @@ void physics(void)
 
 	if (gl.gameover)
 		return;
-	//to move backgriund when player is in motion
-	//if(player in motion){
-	//  gl.walk.xc[0]
-	//
-	//}
-
 	//-------------------------
 	Monster *a = g.ahead;
 	while (a)
 	{
-	
-	a->pos[0] += a->vel[0];
-	a->pos[1] += a->vel[1];
+
+		a->pos[0] += a->vel[0];
+		a->pos[1] += a->vel[1];
 		if (gl.walk || gl.keys[XK_Right] || gl.keys[XK_Left])
 		{
 			//man is walking...
@@ -829,12 +791,12 @@ void physics(void)
 					//edit this to inscrease sprite speed
 					if (!(g.Rowdy.pos[0] <= -450))
 					{
-						g.Rowdy.pos[0] -= g.Rowdy.vel[0]/20;
+						g.Rowdy.pos[0] -= g.Rowdy.vel[0] / 20;
 					}
 					if (!(g.radius.pos[0] <= 5))
 					{
-						g.radius.pos[0] +=(g.radius.vel[0] -.45)/20; 
-					} 
+						g.radius.pos[0] += (g.radius.vel[0] - .45) / 20;
+					}
 					gl.scrollingTexture.xc[0] -= 0.00001;
 					gl.scrollingTexture.xc[1] -= 0.00001;
 					a->pos[0] += .1;
@@ -846,13 +808,12 @@ void physics(void)
 				{
 					if ((g.Rowdy.pos[0] <= 20))
 					{
-						g.Rowdy.pos[0] += g.Rowdy.vel[0]/20;
-						
+						g.Rowdy.pos[0] += g.Rowdy.vel[0] / 20;
 					}
 
-					if ((g.radius.pos[0] <= gl.xres/2))
+					if ((g.radius.pos[0] <= gl.xres / 2))
 					{
-						g.radius.pos[0] -= (g.radius.vel[0] - .45)/20;  
+						g.radius.pos[0] -= (g.radius.vel[0] - .45) / 20;
 					}
 					gl.scrollingTexture.xc[0] += 0.00001;
 					gl.scrollingTexture.xc[1] += 0.00001;
@@ -861,13 +822,12 @@ void physics(void)
 					if (gl.camera[0] < 0.0)
 						gl.camera[0] = 0.0;
 				}
-				
 			}
 		}
 
-	// while (a)
-	// {
-		 
+		// while (a)
+		// {
+
 		if (a->pos[0] < -100.0)
 		{
 			a->pos[0] += (float)gl.xres + 200;
@@ -886,7 +846,7 @@ void physics(void)
 		}
 
 		a = a->next;
-	 }
+	}
 
 	//Monster collision with Sprite?
 	//If collision detected:
@@ -903,7 +863,7 @@ void physics(void)
 			d1 = a->pos[1] - g.radius.pos[1];
 			dist = (d0 * d0 + d1 * d1);
 			//printf("Monster %f, Radius %f\n", a->pos[0], g.radius.pos[0]);
-			if ((dist/100 < (a->radius * a->radius)))
+			if ((dist / 100 < (a->radius * a->radius)))
 			{
 				//this Monster is hit
 				Monster *savea = a->next;
@@ -913,7 +873,7 @@ void physics(void)
 				gl.gameScore += 1;
 				//delete the Mosnter
 			}
-			 i++;
+			i++;
 		}
 		// if (a == NULL)
 		// 	break;
@@ -1010,13 +970,11 @@ void renderScreenText()
 	ggprint8b(&r, 16, c, "Press c for credits");
 	ggprint8b(&r, 16, c, "Press q to quit or r to restart");
 
-    r.bot = gl.yres - 20; 
-    r.left = gl.xres/2;
-    r.center = 0; 
+	r.bot = gl.yres - 20;
+	r.left = gl.xres / 2;
+	r.center = 0;
 	ggprint16(&r, 16, 0x0000FF, "GAME SCORE: %i", gl.gameScore);
 }
-
-
 
 void renderTitleScreen()
 {
@@ -1030,7 +988,7 @@ void renderTitleScreen()
 	glEnd();
 	glPopMatrix();
 	show_title(gl.yres, gl.xres, gl.backgroundTexture);
-	//play_sound();
+	//playSound();
 }
 
 void renderGameOverScreen()
@@ -1074,7 +1032,6 @@ void renderMonsters()
 		glColor3fv(a->color);
 		glTranslatef(a->pos[0], a->pos[1], a->pos[2]);
 		//glBegin(GL_LINE_LOOP);
-		//Log("%i verts\n",a->nverts);
 		for (int i = 0; i < a->nverts; i++)
 		{
 			glBegin(GL_LINE_LOOP);
@@ -1088,29 +1045,30 @@ void renderMonsters()
 	}
 }
 
-void renderSpriteRadius(){
-glPushMatrix();
-glColor3ub(255,255,2);
-		int n = 10;
-		float ang = 0.0;
-		float inc = (3.14159 * 2.0) / (float) n;
-		float pts[100][2];
-		for (int i = 0; i < n; i++)
-		{
-			pts[i][0] = cos(ang) * 100;
-			pts[i][1] = sin(ang) * 200;
-			ang += inc;
-		}
-		glTranslatef(g.radius.pos[0], g.radius.pos[1], 0);
-			for (int i = 0; i < n; i++)
+void renderSpriteRadius()
+{
+	glPushMatrix();
+	glColor3ub(255, 255, 2);
+	int n = 10;
+	float ang = 0.0;
+	float inc = (3.14159 * 2.0) / (float)n;
+	float pts[100][2];
+	for (int i = 0; i < n; i++)
+	{
+		pts[i][0] = cos(ang) * 100;
+		pts[i][1] = sin(ang) * 200;
+		ang += inc;
+	}
+	glTranslatef(g.radius.pos[0], g.radius.pos[1], 0);
+	for (int i = 0; i < n; i++)
 	{
 
-					int j = (i +1) % n;
-					glBegin(GL_LINE_LOOP);
-					glVertex2f(pts[i][0], pts[i][1]);
-					glVertex2f(pts[j][0], pts[j][1]);
-					glEnd();
-	 }
+		int j = (i + 1) % n;
+		glBegin(GL_LINE_LOOP);
+		glVertex2f(pts[i][0], pts[i][1]);
+		glVertex2f(pts[j][0], pts[j][1]);
+		glEnd();
+	}
 	glPopMatrix();
 }
 
@@ -1121,7 +1079,6 @@ void render(void)
 	renderScreenText();
 	renderMonsters();
 	renderSpriteRadius();
-		
 
 	if (!gl.title)
 	{
@@ -1135,22 +1092,18 @@ void render(void)
 	{
 		renderCredits();
 	}
-	///Comment
 }
-
 
 void restart()
 {
 	glClearColor(1.0, 1.0, 1.0, 1.0);
-    clean_sound(); 
-    gl.gameover = 0;
-    gl.gameScore = 0;
-    gl.quit = 0;
-    gl.titleSound = 1;
-    g.Rowdy.pos[0] = -340;
-    g.Rowdy.pos[1] = -150;
-    g.radius.pos[0] = gl.xres/5 - 45; 
-    g.radius.pos[1] = gl.yres/5 + 35; 
-    gl.title ^= 1;
-    play_sound();
+	gl.gameover = 0;
+	gl.gameScore = 0;
+	gl.quit = 0;
+	gl.titleSound = 1;
+	g.Rowdy.pos[0] = -340;
+	g.Rowdy.pos[1] = -150;
+	g.radius.pos[0] = gl.xres / 5 - 45;
+	g.radius.pos[1] = gl.yres / 5 + 35;
+	gl.title ^= 1;
 }

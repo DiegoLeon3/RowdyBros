@@ -39,7 +39,7 @@ void show_javier_creds(int n, int m) {
 */
 
 
-void play_sound(){
+void playSound(){
         //Get started right here.
 #ifdef USE_OPENAL_SOUND
         alutInit(0, NULL);
@@ -84,7 +84,7 @@ void play_sound(){
 #endif //USE_OPENAL_SOUND
 }
 
-void clean_sound(){
+void cleanSound(){
 	
 	#ifdef USE_OPENAL_SOUND
         //Cleanup.
