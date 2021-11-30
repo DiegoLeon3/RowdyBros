@@ -261,6 +261,8 @@ public:
 	}
 	~Game()
 	{
+		 delete [] ahead;
+
 	}
 } g;
 
@@ -894,17 +896,16 @@ void physics(void)
 	while (a)
 	{
 		//is there a bullet within its radius?
-		int i = 0;
-		while (i < 10)
+		 int i = 0;
+		while (i < g.nMonsters)
 		{
 			Monster *a = &g.ahead[i];
 			d0 = a->pos[0] - g.radius.pos[0];
 			d1 = a->pos[1] - g.radius.pos[1];
 			dist = (d0 * d0 + d1 * d1);
-			//printf("Monster %f, Radius %f\n", a->pos[0], g.radius.pos[0]);
-			if ((dist < (a->radius * a->radius)))
+			//printf("Dist %f, Radius %f\n", dist, a->radius * a->radius);
+			if ((dist/100 < (a->radius * a->radius)))
 			{
-				
 				//this Monster is hit
 				Monster *savea = a->next;
 				deleteMonster(&g, a);
@@ -913,7 +914,7 @@ void physics(void)
 				gl.gameScore += 1;
 				//delete the Mosnter
 			}
-			i++;
+			 i++;
 		}
 		// if (a == NULL)
 		// 	break;
