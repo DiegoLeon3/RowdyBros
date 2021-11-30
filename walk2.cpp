@@ -212,8 +212,8 @@ public:
 	Monster *ahead;
 	int nMonsters;
 	Sprite Rowdy;
+	Sprite radius; 
 	
-
 public:
 	Game()
 	{
@@ -225,7 +225,10 @@ public:
 		// Rowdy.pos[2] = 0.0f;
 		Rowdy.vel[0] = (Flt)(rnd() * 2.0 - 1.0);
 		//build 10 Monsters...
-		for (int j = 0; j < 1; j++)
+		radius.pos[0] = gl.xres/5 - 45; 
+		radius.pos[1] = gl.yres/5 + 35;
+		radius.vel[0] = (Flt)(rnd() * 2.0 - 1.0);
+		for (int j = 0; j < 10; j++)
 		{
 			Monster *a = new Monster;
 			a->nverts = 10;
@@ -242,9 +245,9 @@ public:
 			a->pos[1] = (Flt)(rand() % gl.yres);
 			a->pos[2] = 0.0f;
 			a->angle = 0.0;
-			a->color[0] = 255;
-			a->color[1] = 215;
-			a->color[2] = 0;
+			a->color[0] = 35;
+			a->color[1] = 86;
+			a->color[2] = 158;
 			a->vel[0] = (Flt)(rnd() * 2.0 - 1.0);
 			a->vel[1] = (Flt)(rnd() * 2.0 - 1.0);
 			//std::cout << "Monster" << std::endl;
@@ -797,9 +800,9 @@ void physics(void)
 	Monster *a = g.ahead;
 	while (a)
 	{
-		a->pos[0] += a->vel[0];
-		a->pos[1] += a->vel[1];
-
+	
+	a->pos[0] += a->vel[0];
+	a->pos[1] += a->vel[1];
 		if (gl.walk || gl.keys[XK_Right] || gl.keys[XK_Left])
 		{
 			//man is walking...
@@ -821,8 +824,13 @@ void physics(void)
 					//edit this to inscrease sprite speed
 					if (!(g.Rowdy.pos[0] <= -450))
 					{
-						g.Rowdy.pos[0] -= g.Rowdy.vel[0];
+						g.Rowdy.pos[0] -= g.Rowdy.vel[0]/20;
 					}
+					if (!(g.radius.pos[0] <= 5))
+					{
+						
+						g.radius.pos[0] +=(g.radius.vel[0] -.45)/20; 
+					} 
 					gl.scrollingTexture.xc[0] -= 0.00001;
 					gl.scrollingTexture.xc[1] -= 0.00001;
 					a->pos[0] += .1;
@@ -834,7 +842,13 @@ void physics(void)
 				{
 					if ((g.Rowdy.pos[0] <= 20))
 					{
-						g.Rowdy.pos[0] += g.Rowdy.vel[0];
+						g.Rowdy.pos[0] += g.Rowdy.vel[0]/20;
+						
+					}
+
+					if ((g.radius.pos[0] <= gl.xres/2))
+					{
+						g.radius.pos[0] -= (g.radius.vel[0] - .45)/20;  
 					}
 					gl.scrollingTexture.xc[0] += 0.00001;
 					gl.scrollingTexture.xc[1] += 0.00001;
@@ -843,33 +857,13 @@ void physics(void)
 					if (gl.camera[0] < 0.0)
 						gl.camera[0] = 0.0;
 				}
-				//
-				if (gl.keys[XK_Right] && gl.keys[XK_f])
-				{
-					if ((g.Rowdy.pos[0] <= 20))
-					{
-						g.Rowdy.pos[0] += .25;
-					}
-					gl.scrollingTexture.xc[0] += 0.0001;
-					gl.scrollingTexture.xc[1] += 0.0001;
-
-					if (gl.camera[0] < 0.0)
-						gl.camera[0] = 0.0;
-				}
-
-				if (gl.keys[XK_Left] && gl.keys[XK_f])
-				{
-					if (!(g.Rowdy.pos[0] == -450))
-					{
-						g.Rowdy.pos[0] -= .25;
-						gl.scrollingTexture.xc[0] -= 0.00001;
-						gl.scrollingTexture.xc[1] -= 0.00001;
-						if (gl.camera[0] < 0.0)
-							gl.camera[0] = 0.0;
-					}
-				}
+				
 			}
 		}
+
+	// while (a)
+	// {
+		 
 		if (a->pos[0] < -100.0)
 		{
 			a->pos[0] += (float)gl.xres + 200;
@@ -888,7 +882,7 @@ void physics(void)
 		}
 
 		a = a->next;
-	}
+	 }
 
 	//Monster collision with Sprite?
 	//If collision detected:
@@ -898,27 +892,28 @@ void physics(void)
 	{
 		//is there a bullet within its radius?
 		int i = 0;
-		while (i < 1)
+		while (i < 10)
 		{
-			d0 = a->pos[0] - g.Rowdy.pos[0];
-			d1 = a->pos[1] - g.Rowdy.pos[1];
+			Monster *a = &g.ahead[i];
+			d0 = a->pos[0] - g.radius.pos[0];
+			d1 = a->pos[1] - g.radius.pos[1];
 			dist = (d0 * d0 + d1 * d1);
-			printf("X %i, Y %i\n", g.Rowdy.x, g.Rowdy.y);
+			//printf("Monster %f, Radius %f\n", a->pos[0], g.radius.pos[0]);
 			if ((dist < (a->radius * a->radius)))
 			{
-				 printf("Rowdy %f \n");
-				// //printf("Monster %f \n", ceil(a->pos[0]));
-				// //this Monster is hit
-				// Monster *savea = a->next;
-				// deleteMonster(&g, a);
-				// a = savea;
-				// g.nMonsters--;
-				// //delete the Mosnter
+				
+				//this Monster is hit
+				Monster *savea = a->next;
+				deleteMonster(&g, a);
+				a = savea;
+				g.nMonsters--;
+				gl.gameScore += 1;
+				//delete the Mosnter
 			}
 			i++;
 		}
-		if (a == NULL)
-			break;
+		// if (a == NULL)
+		// 	break;
 		a = a->next;
 	}
 	//---------------------------------------------
@@ -1070,8 +1065,6 @@ void renderMonsters()
 		glPushMatrix();
 		glColor3fv(a->color);
 		glTranslatef(a->pos[0], a->pos[1], a->pos[2]);
-		//glRotatef(a->angle, 0.0f, 0.0f, 1.0f);
-
 		//glBegin(GL_LINE_LOOP);
 		//Log("%i verts\n",a->nverts);
 		for (int i = 0; i < a->nverts; i++)
@@ -1087,36 +1080,40 @@ void renderMonsters()
 	}
 }
 
+void renderSpriteRadius(){
+glPushMatrix();
+glColor3ub(255,255,2);
+		int n = 10;
+		float ang = 0.0;
+		float inc = (3.14159 * 2.0) / (float) n;
+		float pts[100][2];
+		for (int i = 0; i < n; i++)
+		{
+			pts[i][0] = cos(ang) * 100;
+			pts[i][1] = sin(ang) * 200;
+			ang += inc;
+		}
+		glTranslatef(g.radius.pos[0], g.radius.pos[1], 0);
+			for (int i = 0; i < n; i++)
+	{
+
+					int j = (i +1) % n;
+					glBegin(GL_LINE_LOOP);
+					glVertex2f(pts[i][0], pts[i][1]);
+					glVertex2f(pts[j][0], pts[j][1]);
+					glEnd();
+	 }
+	glPopMatrix();
+}
+
 void render(void)
 {
 	show_background(gl.yres, gl.xres, gl.scrollingTexture.backTexture, gl.scrollingTexture.xc, gl.scrollingTexture.yc);
 	renderSprite();
 	renderScreenText();
 	renderMonsters();
-
-	// 	glPushMatrix();
-	// 	glColor3ub(255,255,255);
-	// 	glTranslatef(gl.xres/2, gl.yres/2, 0);
-
-	// 	int n = 10;
-	// 	float ang = 0.0;
-	// 	float inc = (3.14159 * 2.0) / (float) n;
-	// 	float pts[100][2];
-	// 	for (int i = 0; i < n; i++)
-	// 	{
-	// 		pts[i][0] = cos(ang) * 100;
-	// 		pts[i][1] = sin(ang) * 100;
-	// 		ang += inc;
-	// 	}
-	// 		for (int i = 0; i < n; i++)
-	// {
-
-	// 				int j = (i +1) % n;
-	// 				glBegin(GL_LINES);
-	// 				glVertex2f(pts[i][0], pts[i][1]);
-	// 				glVertex2f(pts[j][0], pts[j][1]);
-	// 				glEnd();
-	// }
+	renderSpriteRadius();
+		
 
 	if (!gl.title)
 	{
