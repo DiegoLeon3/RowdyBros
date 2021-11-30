@@ -833,7 +833,6 @@ void physics(void)
 					}
 					if (!(g.radius.pos[0] <= 5))
 					{
-						
 						g.radius.pos[0] +=(g.radius.vel[0] -.45)/20; 
 					} 
 					gl.scrollingTexture.xc[0] -= 0.00001;
@@ -1010,9 +1009,15 @@ void renderScreenText()
 	ggprint8b(&r, 16, c, "right arrow + f -> walk faster");
 	ggprint8b(&r, 16, c, "left arrow  <- walk left");
 	ggprint8b(&r, 16, c, "Press C for credits");
-	ggprint8b(&r, 16, c, "Game Score: %i", gl.gameScore);
 	ggprint8b(&r, 16, c, "Press Q to quit");
+
+    r.bot = gl.yres - 20; 
+    r.left = gl.xres/2;
+    r.center = 0; 
+	ggprint16(&r, 16, 0x0000FF, "GAME SCORE: %i", gl.gameScore);
 }
+
+
 
 void renderTitleScreen()
 {
@@ -1135,7 +1140,6 @@ void render(void)
 }
 
 
-
 void restart()
 {
 	glClearColor(1.0, 1.0, 1.0, 1.0);
@@ -1146,5 +1150,8 @@ void restart()
     gl.titleSound = 1;
     g.Rowdy.pos[0] = -340;
     g.Rowdy.pos[1] = -150;
-    gl.title ^= 1;     
+    g.radius.pos[0] = gl.xres/5 - 45; 
+    g.radius.pos[1] = gl.yres/5 + 35; 
+    gl.title ^= 1;
+    play_sound();
 }
