@@ -871,6 +871,7 @@ void physics(void)
 				a = savea;
 				g.nMonsters--;
 				gl.gameScore += 1;
+                playCoin();
 				//delete the Mosnter
 			}
 			i++;
