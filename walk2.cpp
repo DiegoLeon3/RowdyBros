@@ -998,18 +998,17 @@ void renderSprite()
 void renderScreenText()
 {
 	Rect r;
-	unsigned int c = 0x00ffff44;
+	unsigned int c = 0x00FF5733;
 	r.bot = gl.yres - 20;
 	r.left = 10;
 	r.center = 0;
-	ggprint8b(&r, 16, c, "E   Explosion");
+	//ggprint8b(&r, 16, c, "E   Explosion");
 	ggprint8b(&r, 16, c, "+   faster");
 	ggprint8b(&r, 16, c, "-   slower");
 	ggprint8b(&r, 16, c, "right arrow -> walk right");
-	ggprint8b(&r, 16, c, "right arrow + f -> walk faster");
 	ggprint8b(&r, 16, c, "left arrow  <- walk left");
-	ggprint8b(&r, 16, c, "Press C for credits");
-	ggprint8b(&r, 16, c, "Press Q to quit");
+	ggprint8b(&r, 16, c, "Press c for credits");
+	ggprint8b(&r, 16, c, "Press q to quit or r to restart");
 
     r.bot = gl.yres - 20; 
     r.left = gl.xres/2;
