@@ -497,6 +497,8 @@ int main(void)
 
 	initOpengl();
 	init();
+    init_sound();
+
 
 	int done = 0;
 	while (!done)

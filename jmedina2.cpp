@@ -39,13 +39,13 @@ void show_javier_creds(int n, int m) {
 */
 
 
-void play_sound(){
+void init_sound(){
         //Get started right here.
 #ifdef USE_OPENAL_SOUND
         alutInit(0, NULL);
         
 	if (alGetError() != AL_NO_ERROR) {
-                printf("ERROR: alutInit()\n");
+                printf("ERROR: alutInit()\nConsider Updating Drivers.\n");
                 return;
         }
 
