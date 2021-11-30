@@ -261,6 +261,8 @@ public:
 	}
 	~Game()
 	{
+		 delete [] ahead;
+
 	}
 } g;
 
@@ -904,7 +906,6 @@ void physics(void)
 			//printf("Monster %f, Radius %f\n", a->pos[0], g.radius.pos[0]);
 			if ((dist/100 < (a->radius * a->radius)))
 			{
-				
 				//this Monster is hit
 				Monster *savea = a->next;
 				deleteMonster(&g, a);
@@ -913,7 +914,7 @@ void physics(void)
 				gl.gameScore += 1;
 				//delete the Mosnter
 			}
-			i++;
+			 i++;
 		}
 		// if (a == NULL)
 		// 	break;
