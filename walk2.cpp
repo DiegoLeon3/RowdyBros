@@ -61,6 +61,7 @@ int checkKeys(XEvent *e);
 void init();
 void physics();
 void render();
+void restart(); 
 
 //-----------------------------------------------------------------------------
 //Setup timers
@@ -741,6 +742,8 @@ int checkKeys(XEvent *e)
 		//sets game score back to zero
 		//resetGame(gl.gameover, gl.gameScore);
 		break;
+    case XK_r:
+        restart(); 
 	case XK_Down:
 		break;
 	case XK_equal:
@@ -1131,4 +1134,14 @@ void render(void)
 		renderCredits();
 	}
 	///Comment
+}
+
+void restart() 
+{
+    gl.gameScore = 0; 
+    g.Rowdy.pos[0] = -340;
+	g.Rowdy.pos[1] = -150;    
+    clean_sound();
+	glClearColor(1.0, 1.0, 1.0, 1.0);
+    gl.title ^= 1; 
 }
