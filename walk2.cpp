@@ -205,6 +205,7 @@ public:
 	int nMonsters;
 	Sprite Rowdy;
 	Sprite radius;
+	void gameReset();
 
 public:
 	Game()
@@ -249,11 +250,54 @@ public:
 			++nMonsters;
 		}
 	}
+
 	~Game()
 	{
 		delete[] ahead;
 	}
 } g;
+
+void Game::gameReset(){
+ahead = NULL;
+		nMonsters = 0;
+		Rowdy.image = NULL;
+		Rowdy.pos[0] = -340;
+		Rowdy.pos[1] = -150;
+		Rowdy.vel[0] = (Flt)(rnd() * 2.0 - 1.0);
+		//build 10 Monsters...
+		radius.pos[0] = gl.xres / 5 - 45;
+		radius.pos[1] = gl.yres / 5 + 35;
+		radius.vel[0] = (Flt)(rnd() * 2.0 - 1.0);
+		for (int j = 0; j < 10; j++)
+		{
+			Monster *a = new Monster;
+			a->nverts = 10;
+			a->radius = 15;
+			float angle = 0.0;
+			Flt inc = (PI * 2.0) / (float)a->nverts;
+			for (int i = 0; i < a->nverts; i++)
+			{
+				a->pts[i][0] = cos(angle) * a->radius;
+				a->pts[i][1] = sin(angle) * a->radius;
+				angle += inc;
+			}
+			a->pos[0] = (Flt)(rand() % gl.xres);
+			a->pos[1] = (Flt)(rand() % gl.yres);
+			a->pos[2] = 0.0f;
+			a->angle = 0.0;
+			a->color[0] = 35;
+			a->color[1] = 86;
+			a->color[2] = 158;
+			a->vel[0] = (Flt)(rnd() * 2.0 - 1.0);
+			a->vel[1] = (Flt)(rnd() * 2.0 - 1.0);
+			//add to front of linked list
+			a->next = ahead;
+			if (ahead != NULL)
+				ahead->prev = a;
+			ahead = a;
+			++nMonsters;
+		}
+}
 
 void deleteMonster(Game *g, Monster *node)
 {
@@ -617,7 +661,7 @@ void initOpengl(void)
 	unsigned char *walkData = buildAlphaData(&img[0]);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0,
 				 GL_RGBA, GL_UNSIGNED_BYTE, walkData);
-	free(walkData);
+	//free(walkData);
 }
 
 void init()
@@ -1097,14 +1141,12 @@ void render(void)
 
 void restart()
 {
+	g.gameReset();
 	glClearColor(1.0, 1.0, 1.0, 1.0);
+	cleanSound();
 	gl.gameover = 0;
 	gl.gameScore = 0;
 	gl.quit = 0;
 	gl.titleSound = 1;
-	g.Rowdy.pos[0] = -340;
-	g.Rowdy.pos[1] = -150;
-	g.radius.pos[0] = gl.xres / 5 - 45;
-	g.radius.pos[1] = gl.yres / 5 + 35;
 	gl.title ^= 1;
 }
