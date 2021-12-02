@@ -154,8 +154,8 @@ public:
 	}
 } gl;
 
-//---------Set up Monster Class
-class Monster
+//---------Set up Coin Class
+class Coin
 {
 public:
 	Vec pos;
@@ -165,12 +165,12 @@ public:
 	float pts[100][2];
 	float angle;
 	float color[3];
-	struct Monster *prev;
-	struct Monster *next;
+	struct Coin *prev;
+	struct Coin *next;
 	Rect cord;
 
 public:
-	Monster()
+	Coin()
 	{
 		prev = NULL;
 		next = NULL;
@@ -202,8 +202,8 @@ public:
 class Game
 {
 public:
-	Monster *ahead;
-	int nMonsters;
+	Coin *ahead;
+	int nCoins;
 	Sprite Rowdy;
 	Sprite radius;
 	void gameReset();
@@ -212,7 +212,7 @@ public:
 	Game()
 	{
 		ahead = NULL;
-		nMonsters = 0;
+		nCoins = 0;
 		Rowdy.image = NULL;
 		Rowdy.pos[0] = -340;
 		Rowdy.pos[1] = -150;
@@ -223,7 +223,7 @@ public:
 		radius.vel[0] = (Flt)(rnd() * 2.0 - 1.0);
 		for (int j = 0; j < 10; j++)
 		{
-			Monster *a = new Monster;
+			Coin *a = new Coin;
 			a->nverts = 10;
 			a->radius = 15;
 			float angle = 0.0;
@@ -248,7 +248,7 @@ public:
 			if (ahead != NULL)
 				ahead->prev = a;
 			ahead = a;
-			++nMonsters;
+			++nCoins;
 		}
 	}
 
@@ -260,7 +260,7 @@ public:
 
 void Game::gameReset(){
 ahead = NULL;
-		nMonsters = 0;
+		nCoins = 0;
 		Rowdy.image = NULL;
 		Rowdy.pos[0] = -340;
 		Rowdy.pos[1] = -150;
@@ -271,7 +271,7 @@ ahead = NULL;
 		radius.vel[0] = (Flt)(rnd() * 2.0 - 1.0);
 		for (int j = 0; j < 10; j++)
 		{
-			Monster *a = new Monster;
+			Coin *a = new Coin;
 			a->nverts = 10;
 			a->radius = 15;
 			float angle = 0.0;
@@ -296,11 +296,11 @@ ahead = NULL;
 			if (ahead != NULL)
 				ahead->prev = a;
 			ahead = a;
-			++nMonsters;
+			++nCoins;
 		}
 }
 
-void deleteMonster(Game *g, Monster *node)
+void deleteMonster(Game *g, Coin *node)
 {
 	//Remove a node from doubly-linked list
 	//Must look at 4 special cases below.
@@ -336,8 +336,8 @@ void deleteMonster(Game *g, Monster *node)
 	node = NULL;
 };
 
-//This builds new Monster
-void buildMonsterFragment(Monster *ta, Monster *a)
+//This builds new Coin
+void buildMonsterFragment(Coin *ta, Coin *a)
 {
 	//build ta from a
 	ta->nverts = 4;
@@ -526,7 +526,6 @@ int main(void)
 
 	initOpengl();
 	init();
-	playSound();
 	int done = 0;
 	while (!done)
 	{
@@ -771,6 +770,7 @@ int checkKeys(XEvent *e)
 		break;
 	case XK_p:
 		gl.title ^= 1;
+		playSound();
 		break;
 	case XK_r:
 		restart();
@@ -822,7 +822,7 @@ void physics(void)
 	if (gl.gameover)
 		return;
 	//-------------------------
-	Monster *a = g.ahead;
+	Coin *a = g.ahead;
 	while (a)
 	{
 
@@ -906,7 +906,7 @@ void physics(void)
 		a = a->next;
 	}
 
-	//Monster collision with Sprite?
+	//Coin collision with Sprite?
 	//If collision detected:
 	//     1. delete the MOnster
 	a = g.ahead;
@@ -914,32 +914,30 @@ void physics(void)
 	{
 		//is there a bullet within its radius?
 		int i = 0;
-		while (i < g.nMonsters)
+		while (i < g.nCoins)
 		{
-			Monster *a = &g.ahead[i];
+			Coin *a = &g.ahead[i];
 			d0 = a->pos[0] - g.radius.pos[0];
 			d1 = a->pos[1] - g.radius.pos[1];
 			dist = (d0 * d0 + d1 * d1);
-			//printf("Monster %f, Radius %f\n", a->pos[0], g.radius.pos[0]);
+			
 			if ((dist / 100 < (a->radius * a->radius)))
 			{
-				//this Monster is hit
-				Monster *savea = a->next;
+				//this Coin is hit
+				Coin *savea = a->next;
+				//delete the coin
 				deleteMonster(&g, a);
 				a = savea;
-				g.nMonsters--;
+				g.nCoins--;
 				gl.gameScore += 1;
                 playCoin();
-				//delete the Mosnter
+				
 			}
 			i++;
 		}
-		// if (a == NULL)
-		// 	break;
+		
 		a = a->next;
 	}
-	//---------------------------------------------
-	//-----------------------
 }
 
 void renderSprite()
@@ -1086,10 +1084,10 @@ void renderCredits()
 
 void renderMonsters()
 {
-	Monster *a = g.ahead;
+	Coin *a = g.ahead;
 	while (a)
 	{
-		//Log("draw Monster...\n");
+		//Log("draw Coin...\n");
 		glPushMatrix();
 		glColor3fv(a->color);
 		glTranslatef(a->pos[0], a->pos[1], a->pos[2]);
@@ -1154,13 +1152,14 @@ void render(void)
 	{
 	   renderCredits(); 
     }
+	
 }
 
 void restart()
 {
+	cleanSound(); 
 	g.gameReset();
 	glClearColor(1.0, 1.0, 1.0, 1.0);
-	cleanSound();
 	gl.gameover = 0;
 	gl.gameScore = 0;
 	gl.quit = 0;
