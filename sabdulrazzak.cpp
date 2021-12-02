@@ -55,7 +55,7 @@ void playCoin(){
     //Set volume and pitch to normal, ensure looping of sound.
     alSourcef(alSource, AL_GAIN, 1.0f);
     alSourcef(alSource, AL_PITCH, 1.0f);
-    alSourcei(alSource, AL_LOOPING, AL_TRUE);
+    alSourcei(alSource, AL_LOOPING, AL_FALSE);
     alSourcePlay(alSource);
     if (alGetError() != AL_NO_ERROR) {
         printf("ERROR: setting source\n");
