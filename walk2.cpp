@@ -1,12 +1,8 @@
 //3350
 //program: walk2.cpp
 //original author:  Gordon Griesel
-//name: Edward Kyles
 //date:    fall 21
-//
-//Walk cycle using a sprite sheet.
-//images courtesy: http://games.ucla.edu/resource/walk-cycles/
-//
+
 //This program includes:
 //  multiple sprite-sheet animations
 //  a level tiling system
@@ -23,34 +19,40 @@
 #include <GL/glx.h>
 #include "log.h"
 //#include "ppm.h"
-
 #include <GL/glut.h>
-
 
 #include "fonts.h"
 #include "sabdulrazzak.cpp"
 #include "dleon.cpp"
 #include "ekyles.cpp"
 #include "jmedina2.cpp"
+#ifdef USE_OPENAL_SOUND
+#include </usr/include/AL/alut.h>
+#endif //USE_OPENAL_SOUND
 
 //defined types
 typedef double Flt;
-typedef double Vec[3];
-typedef Flt	Matrix[4][4];
+typedef float Vec[3];
+typedef Flt Matrix[4][4];
 
 //macros
 //  #define rnd() (((double)rand())/(double)RAND_MAX)
-#define random(a) (rand()%a)
-#define MakeVector(v, x, y, z) (v)[0]=(x),(v)[1]=(y),(v)[2]=(z)
-#define VecCopy(a,b) (b)[0]=(a)[0];(b)[1]=(a)[1];(b)[2]=(a)[2]
-#define VecDot(a,b)	((a)[0]*(b)[0]+(a)[1]*(b)[1]+(a)[2]*(b)[2])
-#define VecSub(a,b,c) (c)[0]=(a)[0]-(b)[0]; \
-                      (c)[1]=(a)[1]-(b)[1]; \
-                      (c)[2]=(a)[2]-(b)[2]
+#define random(a) (rand() % a)
+#define MakeVector(v, x, y, z) (v)[0] = (x), (v)[1] = (y), (v)[2] = (z)
+#define VecCopy(a, b) \
+	(b)[0] = (a)[0];  \
+	(b)[1] = (a)[1];  \
+	(b)[2] = (a)[2]
+#define VecDot(a, b) ((a)[0] * (b)[0] + (a)[1] * (b)[1] + (a)[2] * (b)[2])
+#define VecSub(a, b, c)       \
+	(c)[0] = (a)[0] - (b)[0]; \
+	(c)[1] = (a)[1] - (b)[1]; \
+	(c)[2] = (a)[2] - (b)[2]
 //constants
 const float timeslice = 1.0f;
 const float gravity = -0.2f;
 #define ALPHA 1
+#define PI 3.141592653589793
 
 //function prototypes
 void initOpengl();
@@ -59,27 +61,32 @@ int checkKeys(XEvent *e);
 void init();
 void physics();
 void render();
-
+void restart();
 //-----------------------------------------------------------------------------
 //Setup timers
-class Timers {
+class Timers
+{
 public:
 	double physicsRate;
 	double oobillion;
 	struct timespec timeStart, timeEnd, timeCurrent;
 	struct timespec walkTime;
-	Timers() {
+	Timers()
+	{
 		physicsRate = 1.0 / 30.0;
 		oobillion = 1.0 / 1e9;
 	}
-	double timeDiff(struct timespec *start, struct timespec *end) {
-		return (double)(end->tv_sec - start->tv_sec ) +
-				(double)(end->tv_nsec - start->tv_nsec) * oobillion;
+	double timeDiff(struct timespec *start, struct timespec *end)
+	{
+		return (double)(end->tv_sec - start->tv_sec) +
+			   (double)(end->tv_nsec - start->tv_nsec) * oobillion;
 	}
-	void timeCopy(struct timespec *dest, struct timespec *source) {
+	void timeCopy(struct timespec *dest, struct timespec *source)
+	{
 		memcpy(dest, source, sizeof(struct timespec));
 	}
-	void recordTime(struct timespec *t) {
+	void recordTime(struct timespec *t)
+	{
 		clock_gettime(CLOCK_REALTIME, t);
 	}
 } timers;
@@ -87,16 +94,103 @@ public:
 
 class Image;
 
-class Sprite {
+class Texture
+{
+public:
+	Image *backImage;
+	GLuint backTexture;
+	float xc[2];
+	float yc[2];
+};
+
+class Global
+{
+public:
+	int titleSound;
+	int gameover;
+	int gameScore;
+	unsigned char keys[65536];
+	int xres, yres;
+	int movie, movieStep;
+	int walk;
+	int creds;
+	int title;
+	int quit;
+	int walkFrame;
+	double delay;
+	//declaring the bacground and its texture
+	int backgroundFrame;
+	//Adding background Texture for title screen
+	Image *backgroundImage;
+	GLuint backgroundTexture;
+	GLuint gameOverText;
+	Texture scrollingTexture;
+
+	//camera is centered at (0,0) lower-left of screen.
+	Flt camera[2];
+	~Global()
+	{
+		logClose();
+	}
+	Global()
+	{
+		logOpen();
+		camera[0] = camera[1] = 0.0;
+		movie = 0;
+		title = 0;
+		movieStep = 2;
+		xres = 1080;
+		yres = 900;
+		walk = 0;
+		walkFrame = 0;
+
+		//walkImage = NULL;
+		backgroundFrame = 0;
+		backgroundImage = NULL;
+
+		delay = 0.1;
+		memset(keys, 0, 65536);
+	}
+} gl;
+
+//---------Set up Monster Class
+class Monster
+{
+public:
+	Vec pos;
+	Vec vel;
+	int nverts;
+	Flt radius;
+	float pts[100][2];
+	float angle;
+	float color[3];
+	struct Monster *prev;
+	struct Monster *next;
+	Rect cord;
+
+public:
+	Monster()
+	{
+		prev = NULL;
+		next = NULL;
+	}
+};
+class Sprite
+{
 public:
 	int onoff;
 	int frame;
 	double delay;
+	float pts[100][2];
+	int x, y;
 	Vec pos;
+	Vec vel;
 	Image *image;
 	GLuint tex;
 	struct timespec time;
-	Sprite() {
+	Rect cord;
+	Sprite()
+	{
 		onoff = 0;
 		frame = 0;
 		image = NULL;
@@ -104,267 +198,295 @@ public:
 	}
 };
 
-class Texture {
-  public:
-      Image *backImage;
-      GLuint backTexture;
-      float xc[2];
-      float yc[2];
-  };
-
-class Global {
+class Game
+{
 public:
-	int gameover;
-	int gameScore;
-	unsigned char keys[65536];
-	int xres, yres;
-	int movie, movieStep;
-	int walk;
-    int creds;
-    int title;
-	int quit; 
-	int walkFrame;
-	double delay;
-	Image *walkImage;
-	GLuint walkTexture;
-//declationg the bacground and its texture 
-    int backgroundFrame;
-    //Adding background Texture for title screen
-	Image *backgroundImage;
-    GLuint backgroundTexture; 
+	Monster *ahead;
+	int nMonsters;
+	Sprite Rowdy;
+	Sprite radius;
+	void gameReset();
 
-	GLuint gameOverText;
-    
-
-
-//declaring the coin
-     //int coinFrame;
-     //Image *coinImage;
-     //GLuint coinTexture;    
-
-
-    //Adding background texture for main screen 
-	Texture scrollingTexture;
-   // Image *scrollingImage;
-    //GLuint scrollingTexture;
-    //////////
-	
-    Vec box[20];
-	Sprite exp;
-	Sprite exp44;
-	Vec ball_pos;
-	Vec ball_vel;
-	//camera is centered at (0,0) lower-left of screen. 
-	Flt camera[2];
-	~Global() {
-		logClose();
-	}
-	Global() {
-		logOpen();
-		camera[0] = camera[1] = 0.0;
-		movie=0;
-        title=0;
-		movieStep=2;
-		xres=800;
-		yres=600;
-		walk=0;
-		walkFrame=0;
-		walkImage=NULL;
-        backgroundFrame = 0;
-        backgroundImage=NULL;
-
-		int gameover = 0;
-		int gameScore = 0; 
-		int quit = 0; 
-
-        
-       // coinFrame = 0;
-        //coinImage = NULL;
-
-
-		MakeVector(ball_pos, 520.0, 0, 0);
-		MakeVector(ball_vel, 0, 0, 0);
-		delay = 0.1;
-		exp.onoff=0;
-		exp.frame=0;
-		exp.image=NULL;
-		exp.delay = 0.02;
-		exp44.onoff=0;
-		exp44.frame=0;
-		exp44.image=NULL;
-		exp44.delay = 0.022;
-		for (int i=0; i<20; i++) {
-			box[i][0] = rnd() * xres;
-			box[i][1] = rnd() * (yres-220) + 220.0;
-			box[i][2] = 0.0;
-		}
-		memset(keys, 0, 65536);
-	}
-} gl;
-
-class Level {
 public:
-	unsigned char arr[16][80];
-	int nrows, ncols;
-	int tilesize[2];
-	Flt ftsz[2];
-	Flt tile_base;
-	Level() {
-		//Log("Level constructor\n");
-		tilesize[0] = 32;
-		tilesize[1] = 32;
-		ftsz[0] = (Flt)tilesize[0];
-		ftsz[1] = (Flt)tilesize[1];
-		tile_base = 220.0;
-		//read level
-		FILE *fpi = fopen("level1test.txt","r");
-		if (fpi) {
-			nrows=0;
-			char line[100];
-			while (fgets(line, 100, fpi) != NULL) {
-				removeCrLf(line);
-				int slen = strlen(line);
-				ncols = slen;
-				//Log("line: %s\n", line);
-				for (int j=0; j<slen; j++) {
-					arr[nrows][j] = line[j];
-				}
-				++nrows;
+	Game()
+	{
+		ahead = NULL;
+		nMonsters = 0;
+		Rowdy.image = NULL;
+		Rowdy.pos[0] = -340;
+		Rowdy.pos[1] = -150;
+		Rowdy.vel[0] = (Flt)(rnd() * 2.0 - 1.0);
+		//build 10 Monsters...
+		radius.pos[0] = gl.xres / 5 - 45;
+		radius.pos[1] = gl.yres / 5 + 35;
+		radius.vel[0] = (Flt)(rnd() * 2.0 - 1.0);
+		for (int j = 0; j < 10; j++)
+		{
+			Monster *a = new Monster;
+			a->nverts = 10;
+			a->radius = 15;
+			float angle = 0.0;
+			Flt inc = (PI * 2.0) / (float)a->nverts;
+			for (int i = 0; i < a->nverts; i++)
+			{
+				a->pts[i][0] = cos(angle) * a->radius;
+				a->pts[i][1] = sin(angle) * a->radius;
+				angle += inc;
 			}
-			fclose(fpi);
-			//printf("nrows of background data: %i\n", nrows);
-		}
-		for (int i=0; i<nrows; i++) {
-			for (int j=0; j<ncols; j++) {
-				printf("%c", arr[i][j]);
-			}
-			printf("\n");
-		}
-	}
-	void removeCrLf(char *str) {
-		//remove carriage return and linefeed from a Cstring
-		char *p = str;
-		while (*p) {
-			if (*p == 10 || *p == 13) {
-				*p = '\0';
-				break;
-			}
-			++p;
+			a->pos[0] = (Flt)(rand() % gl.xres);
+			a->pos[1] = (Flt)(rand() % gl.yres);
+			a->pos[2] = 0.0f;
+			a->angle = 0.0;
+			a->color[0] = 35;
+			a->color[1] = 86;
+			a->color[2] = 158;
+			a->vel[0] = (Flt)(rnd() * 2.0 - 1.0);
+			a->vel[1] = (Flt)(rnd() * 2.0 - 1.0);
+			//add to front of linked list
+			a->next = ahead;
+			if (ahead != NULL)
+				ahead->prev = a;
+			ahead = a;
+			++nMonsters;
 		}
 	}
-} lev;
+
+	~Game()
+	{
+		delete[] ahead;
+	}
+} g;
+
+void Game::gameReset(){
+ahead = NULL;
+		nMonsters = 0;
+		Rowdy.image = NULL;
+		Rowdy.pos[0] = -340;
+		Rowdy.pos[1] = -150;
+		Rowdy.vel[0] = (Flt)(rnd() * 2.0 - 1.0);
+		//build 10 Monsters...
+		radius.pos[0] = gl.xres / 5 - 45;
+		radius.pos[1] = gl.yres / 5 + 35;
+		radius.vel[0] = (Flt)(rnd() * 2.0 - 1.0);
+		for (int j = 0; j < 10; j++)
+		{
+			Monster *a = new Monster;
+			a->nverts = 10;
+			a->radius = 15;
+			float angle = 0.0;
+			Flt inc = (PI * 2.0) / (float)a->nverts;
+			for (int i = 0; i < a->nverts; i++)
+			{
+				a->pts[i][0] = cos(angle) * a->radius;
+				a->pts[i][1] = sin(angle) * a->radius;
+				angle += inc;
+			}
+			a->pos[0] = (Flt)(rand() % gl.xres);
+			a->pos[1] = (Flt)(rand() % gl.yres);
+			a->pos[2] = 0.0f;
+			a->angle = 0.0;
+			a->color[0] = 35;
+			a->color[1] = 86;
+			a->color[2] = 158;
+			a->vel[0] = (Flt)(rnd() * 2.0 - 1.0);
+			a->vel[1] = (Flt)(rnd() * 2.0 - 1.0);
+			//add to front of linked list
+			a->next = ahead;
+			if (ahead != NULL)
+				ahead->prev = a;
+			ahead = a;
+			++nMonsters;
+		}
+}
+
+void deleteMonster(Game *g, Monster *node)
+{
+	//Remove a node from doubly-linked list
+	//Must look at 4 special cases below.
+	if (node->prev == NULL)
+	{
+		if (node->next == NULL)
+		{
+			//only 1 item in list.
+			g->ahead = NULL;
+		}
+		else
+		{
+			//at beginning of list.
+			node->next->prev = NULL;
+			g->ahead = node->next;
+		}
+	}
+	else
+	{
+		if (node->next == NULL)
+		{
+			//at end of list.
+			node->prev->next = NULL;
+		}
+		else
+		{
+			//in middle of list.
+			node->prev->next = node->next;
+			node->next->prev = node->prev;
+		}
+	}
+	delete node;
+	node = NULL;
+};
+
+//This builds new Monster
+void buildMonsterFragment(Monster *ta, Monster *a)
+{
+	//build ta from a
+	ta->nverts = 4;
+	ta->radius = a->radius / 2.0;
+	Flt r2 = ta->radius / 2.0;
+	Flt angle = 0.0f;
+	Flt inc = (PI * 2.0) / (Flt)ta->nverts;
+	for (int i = 0; i < ta->nverts; i++)
+	{
+		ta->pts[i][0] = sin(angle) * (r2 + rnd() * ta->radius);
+		ta->pts[i][1] = cos(angle) * (r2 + rnd() * ta->radius);
+		angle += inc;
+	}
+	ta->pos[0] = a->pos[0] + rnd() * 10.0 - 5.0;
+	ta->pos[1] = a->pos[1] + rnd() * 10.0 - 5.0;
+	ta->pos[2] = 0.0f;
+	ta->angle = 0.0;
+	ta->color[0] = 0.5;
+	ta->color[1] = 0.5;
+	ta->color[2] = 0.5;
+	ta->vel[0] = a->vel[0] + (rnd() * 2.0 - 1.0);
+	ta->vel[1] = a->vel[1] + (rnd() * 2.0 - 1.0);
+};
 
 //X Windows variables
-class X11_wrapper {
+class X11_wrapper
+{
 private:
 	Display *dpy;
 	Window win;
+
 public:
-	~X11_wrapper() {
+	~X11_wrapper()
+	{
 		XDestroyWindow(dpy, win);
 		XCloseDisplay(dpy);
 	}
-	void setTitle() {
+	void setTitle()
+	{
 		//Set the window title bar.
 		XMapWindow(dpy, win);
 		XStoreName(dpy, win, "Rowdy Bros.");
 	}
-	void setupScreenRes(const int w, const int h) {
+	void setupScreenRes(const int w, const int h)
+	{
 		gl.xres = w;
 		gl.yres = h;
 	}
-	X11_wrapper() {
-		GLint att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
-		//GLint att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, None };
+	X11_wrapper()
+	{
+		GLint att[] = {GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None};
 		XSetWindowAttributes swa;
 		setupScreenRes(gl.xres, gl.yres);
 		dpy = XOpenDisplay(NULL);
-		if (dpy == NULL) {
+		if (dpy == NULL)
+		{
 			printf("\n\tcannot connect to X server\n\n");
 			exit(EXIT_FAILURE);
 		}
 		Window root = DefaultRootWindow(dpy);
 		XVisualInfo *vi = glXChooseVisual(dpy, 0, att);
-		if (vi == NULL) {
+		if (vi == NULL)
+		{
 			printf("\n\tno appropriate visual found\n\n");
 			exit(EXIT_FAILURE);
-		} 
+		}
 		Colormap cmap = XCreateColormap(dpy, root, vi->visual, AllocNone);
 		swa.colormap = cmap;
 		swa.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask |
-			StructureNotifyMask | SubstructureNotifyMask;
+						 StructureNotifyMask | SubstructureNotifyMask;
 		win = XCreateWindow(dpy, root, 0, 0, gl.xres, gl.yres, 0,
-			vi->depth, InputOutput, vi->visual,
-			CWColormap | CWEventMask, &swa);
+							vi->depth, InputOutput, vi->visual,
+							CWColormap | CWEventMask, &swa);
 		GLXContext glc = glXCreateContext(dpy, vi, NULL, GL_TRUE);
 		glXMakeCurrent(dpy, win, glc);
 		setTitle();
 	}
-	void reshapeWindow(int width, int height) {
+	void reshapeWindow(int width, int height)
+	{
 		//window has been resized.
 		setupScreenRes(width, height);
 		glViewport(0, 0, (GLint)width, (GLint)height);
-		glMatrixMode(GL_PROJECTION); glLoadIdentity();
-		glMatrixMode(GL_MODELVIEW); glLoadIdentity();
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
 		glOrtho(0, gl.xres, 0, gl.yres, -1, 1);
 		setTitle();
 	}
-	void checkResize(XEvent *e) {
+	void checkResize(XEvent *e)
+	{
 		//The ConfigureNotify is sent by the
 		//server if the window is resized.
 		if (e->type != ConfigureNotify)
 			return;
 		XConfigureEvent xce = e->xconfigure;
-		if (xce.width != gl.xres || xce.height != gl.yres) {
+		if (xce.width != gl.xres || xce.height != gl.yres)
+		{
 			//Window size did change.
 			reshapeWindow(xce.width, xce.height);
 		}
 	}
-	bool getXPending() {
+	bool getXPending()
+	{
 		return XPending(dpy);
 	}
-	XEvent getXNextEvent() {
+	XEvent getXNextEvent()
+	{
 		XEvent e;
 		XNextEvent(dpy, &e);
 		return e;
 	}
-	void swapBuffers() {
+	void swapBuffers()
+	{
 		glXSwapBuffers(dpy, win);
 	}
 } x11;
 
-class Image {
+class Image
+{
 public:
 	int width, height;
 	unsigned char *data;
-	~Image() { delete [] data; }
-	Image(const char *fname) {
+	~Image() { delete[] data; }
+	Image(const char *fname)
+	{
 		if (fname[0] == '\0')
 			return;
-		//printf("fname **%s**\n", fname);
 		int ppmFlag = 0;
 		char name[40];
 		strcpy(name, fname);
 		int slen = strlen(name);
 		char ppmname[80];
-		if (strncmp(name+(slen-4), ".ppm", 4) == 0)
+		if (strncmp(name + (slen - 4), ".ppm", 4) == 0)
 			ppmFlag = 1;
-		if (ppmFlag) {
+		if (ppmFlag)
+		{
 			strcpy(ppmname, name);
-		} else {
-			name[slen-4] = '\0';
-			//printf("name **%s**\n", name);
-			sprintf(ppmname,"%s.ppm", name);
-			//printf("ppmname **%s**\n", ppmname);
+		}
+		else
+		{
+			name[slen - 4] = '\0';
+			sprintf(ppmname, "%s.ppm", name);
 			char ts[100];
-			//system("convert eball.jpg eball.ppm");
 			sprintf(ts, "convert %s %s", fname, ppmname);
 			system(ts);
 		}
-		//sprintf(ts, "%s", name);
-		//printf("read ppm **%s**\n", ppmname); fflush(stdout);
 		FILE *fpi = fopen(ppmname, "r");
-		if (fpi) {
+		if (fpi)
+		{
 			char line[200];
 			fgets(line, 200, fpi);
 			fgets(line, 200, fpi);
@@ -374,13 +496,15 @@ public:
 			sscanf(line, "%i %i", &width, &height);
 			fgets(line, 200, fpi);
 			//get pixel data
-			int n = width * height * 3;			
-			data = new unsigned char[n];			
-			for (int i=0; i<n; i++)
+			int n = width * height * 3;
+			data = new unsigned char[n];
+			for (int i = 0; i < n; i++)
 				data[i] = fgetc(fpi);
 			fclose(fpi);
-		} else {
-			printf("ERROR opening image: %s\n",ppmname);
+		}
+		else
+		{
+			printf("ERROR opening image: %s\n", ppmname);
 			exit(0);
 		}
 		if (!ppmFlag)
@@ -388,6 +512,7 @@ public:
 	}
 };
 Image img[6] = {
+<<<<<<< HEAD
 "./images/walk.gif",
 "./images/roachc.png",
 "./images/titleScreen.png",
@@ -396,15 +521,26 @@ Image img[6] = {
 "./images/coin8bit.png"
 };
 
+=======
+	"./images/walk.gif",
+	"./images/fireBall.png",
+	"./images/titleScreen.png",
+	"./images/scrollingBackground.jpg",
+	"./images/gameOver.jpg",
+	"./images/coin8bit.png"};
+>>>>>>> b47dc063ddcaf1a6fa1a217479cfb9324cf5642e
 
 int main(void)
 {
-	
+
 	initOpengl();
 	init();
+	playSound();
 	int done = 0;
-	while (!done) {
-		while (x11.getXPending()) {
+	while (!done)
+	{
+		while (x11.getXPending())
+		{
 			XEvent e = x11.getXNextEvent();
 			x11.checkResize(&e);
 			checkMouse(&e);
@@ -415,7 +551,7 @@ int main(void)
 		render();
 		x11.swapBuffers();
 	}
-	cleanup_fonts();
+	cleanSound();
 	return 0;
 }
 
@@ -427,22 +563,22 @@ unsigned char *buildAlphaData(Image *img)
 	unsigned char *data = (unsigned char *)img->data;
 	newdata = (unsigned char *)malloc(img->width * img->height * 4);
 	ptr = newdata;
-	unsigned char a,b,c;
+	unsigned char a, b, c;
 	//use the first pixel in the image as the transparent color.
-	unsigned char t0 = *(data+0);
-	unsigned char t1 = *(data+1);
-	unsigned char t2 = *(data+2);
-	for (i=0; i<img->width * img->height * 3; i+=3) {
-		a = *(data+0);
-		b = *(data+1);
-		c = *(data+2);
-		*(ptr+0) = a;
-		*(ptr+1) = b;
-		*(ptr+2) = c;
-		*(ptr+3) = 1;
-		if (a==t0 && b==t1 && c==t2)
-			*(ptr+3) = 0;
-		//--------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---------------------------------------
+	unsigned char t0 = *(data + 0);
+	unsigned char t1 = *(data + 1);
+	unsigned char t2 = *(data + 2);
+	for (i = 0; i < img->width * img->height * 3; i += 3)
+	{
+		a = *(data + 0);
+		b = *(data + 1);
+		c = *(data + 2);
+		*(ptr + 0) = a;
+		*(ptr + 1) = b;
+		*(ptr + 2) = c;
+		*(ptr + 3) = 1;
+		if (a == t0 && b == t1 && c == t2)
+			*(ptr + 3) = 0;
 		ptr += 4;
 		data += 3;
 	}
@@ -454,8 +590,10 @@ void initOpengl(void)
 	//OpenGL initialization
 	glViewport(0, 0, gl.xres, gl.yres);
 	//Initialize matrices
-	glMatrixMode(GL_PROJECTION); glLoadIdentity();
-	glMatrixMode(GL_MODELVIEW); glLoadIdentity();
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
 	//This sets 2D mode (no perspective)
 	glOrtho(0, gl.xres, 0, gl.yres, -1, 1);
 	//
@@ -470,109 +608,70 @@ void initOpengl(void)
 	//Do this to allow fonts
 	glEnable(GL_TEXTURE_2D);
 	initialize_fonts();
-	
-    ////////////////////////////////////////////////////
-   ///Title Screen background set up  
-   glGenTextures(1, &gl.backgroundTexture);
-   int w = img[2].width; 
-   int h = img[2].height; 
-    
-    glBindTexture(GL_TEXTURE_2D, gl.backgroundTexture);
-    //unsigned char* ftData = buildAlphaData(&img[2]); 
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-     
-     glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h,0, GL_RGB, GL_UNSIGNED_BYTE, img[2].data);
-     //-------------------------------------------
 
-//Game Over Screen 
-   glGenTextures(1, &gl.gameOverText);
-    w = img[4].width; 
-    h = img[4].height; 
-    
-    glBindTexture(GL_TEXTURE_2D, gl.gameOverText);
-    //unsigned char* ftData = buildAlphaData(&img[2]); 
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-     
-    glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h,0, GL_RGB, GL_UNSIGNED_BYTE, img[4].data);
+	///Title Screen background set up
+	glGenTextures(1, &gl.backgroundTexture);
+	int w = img[2].width;
+	int h = img[2].height;
 
+	glBindTexture(GL_TEXTURE_2D, gl.backgroundTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, img[2].data);
+	//-------------------------------------------
 
+	//Game Over Screen
+	glGenTextures(1, &gl.gameOverText);
+	w = img[4].width;
+	h = img[4].height;
+	glBindTexture(GL_TEXTURE_2D, gl.gameOverText);
+	//unsigned char* ftData = buildAlphaData(&img[2]);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, img[4].data);
 
+	//-----------------------------------------------------------
 
+	gl.scrollingTexture.backImage = &img[3];
+	//create opengl texture elements
+	glGenTextures(1, &gl.scrollingTexture.backTexture);
+	w = gl.scrollingTexture.backImage->width;
+	h = gl.scrollingTexture.backImage->height;
+	glBindTexture(GL_TEXTURE_2D, gl.scrollingTexture.backTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0,
+				 GL_RGB, GL_UNSIGNED_BYTE, gl.scrollingTexture.backImage->data);
+	gl.scrollingTexture.xc[0] = 0.0;
+	gl.scrollingTexture.xc[1] = 0.25;
+	gl.scrollingTexture.yc[0] = 0.0;
+	gl.scrollingTexture.yc[1] = 1.0;
+	////////////////////////////////////////////////////
 
-
-    
-    //----------------------------------------------------------- 
-    //Coin image setup
-	/*
-    glGenTextures(1, &gl.coinTexture);
-    w = img[4].width;
-    h = img[4].height;
-    glBindTexture(GL_TEXTURE_2D, gl.coinTexture);
-    //unsigned char* ftData = buildAlphaData(&img[2]); 
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-     
-     glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h,0, GL_RGB, GL_UNSIGNED_BYTE, img[4].data);
-    */
-
-    /* 
-
-    ////Main Screen Set-up 
-    glGenTextures(1, &gl.scrollingTexture);
-    w = img[3].width; 
-    h = img[3].height; 
-    
-    glBindTexture(GL_TEXTURE_2D, gl.scrollingTexture);
-    //unsigned char* ftData = buildAlphaData(&img[2]); 
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-     
-     glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h,0, GL_RGB, GL_UNSIGNED_BYTE, img[3].data);
-     //-------------------------------------------
-    */
-     gl.scrollingTexture.backImage = &img[3];
-     //create opengl texture elements
-     glGenTextures(1, &gl.scrollingTexture.backTexture);
-      w = gl.scrollingTexture.backImage->width;
-      h = gl.scrollingTexture.backImage->height;
-     glBindTexture(GL_TEXTURE_2D, gl.scrollingTexture.backTexture);
-     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-     glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0,
-                             GL_RGB, GL_UNSIGNED_BYTE, gl.scrollingTexture.backImage->data);
-     gl.scrollingTexture.xc[0] = 0.0;
-     gl.scrollingTexture.xc[1] = 0.25;
-     gl.scrollingTexture.yc[0] = 0.0;
-     gl.scrollingTexture.yc[1] = 1.0;
-    ////////////////////////////////////////////////////
-    
-    
-    
-    
-    
-    //
+	//
 	//load the images file into a ppm structure.
 	//
-	 w = img[0].width;
-	 h = img[0].height;
+	w = img[0].width;
+	h = img[0].height;
+	g.Rowdy.x = w / 2;
+	g.Rowdy.y = h / 2;
 	//
 	//create opengl texture elements
-	glGenTextures(1, &gl.walkTexture);
- 
+	glGenTextures(1, &g.Rowdy.tex);
+
 	//-------------------------------------------------------------------------
 	//silhouette
 	//this is similar to a sprite graphic
 	//
-	glBindTexture(GL_TEXTURE_2D, gl.walkTexture);
+	glBindTexture(GL_TEXTURE_2D, g.Rowdy.tex);
 	//
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	//
 	//must build a new set of data...
-	unsigned char *walkData = buildAlphaData(&img[0]);	
+	unsigned char *walkData = buildAlphaData(&img[0]);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0,
+<<<<<<< HEAD
 		GL_RGBA, GL_UNSIGNED_BYTE, walkData);
 	free(walkData);
 
@@ -609,162 +708,125 @@ void initOpengl(void)
 		GL_RGBA, GL_UNSIGNED_BYTE, xData);
 	free(xData);
 
+=======
+				 GL_RGBA, GL_UNSIGNED_BYTE, walkData);
+	//free(walkData);
+>>>>>>> b47dc063ddcaf1a6fa1a217479cfb9324cf5642e
 }
 
-void init() {
-
+void init()
+{
 }
 
 void checkMouse(XEvent *e)
 {
-	//printf("checkMouse()...\n"); fflush(stdout);
-	//Did the mouse move?
 	//Was a mouse button clicked?
 	static int savex = 0;
 	static int savey = 0;
 	//
 	if (e->type != ButtonRelease && e->type != ButtonPress &&
-			e->type != MotionNotify)
+		e->type != MotionNotify)
 		return;
 
-	int mx = e->xbutton.x;
-	int my = e->xbutton.y;
-
-	if (e->type == ButtonRelease) {
+	if (e->type == ButtonRelease)
+	{
 		return;
 	}
-	if (e->type == ButtonPress) {
-		if (e->xbutton.button==1) {
+	if (e->type == ButtonPress)
+	{
+		if (e->xbutton.button == 1)
+		{
 			//Left button is down
-			//makeParticle(mx,my,gl.monster, gl.yres);
 		}
-		if (e->xbutton.button==3) {
+		if (e->xbutton.button == 3)
+		{
 			//Right button is down
 		}
 	}
-	if (e->type == MotionNotify) {
-		if (savex != e->xbutton.x || savey != e->xbutton.y) {
+	if (e->type == MotionNotify)
+	{
+		if (savex != e->xbutton.x || savey != e->xbutton.y)
+		{
 			//Mouse moved
-			 savex = e->xbutton.x;
-			 savey = e->xbutton.y;
-
-			//for(int i =0; i<5; i++)
-            //makeParticle(savex,savey,gl.monster, gl.yres);
-
+			savex = e->xbutton.x;
+			savey = e->xbutton.y;
 		}
 	}
-}
-
-void screenCapture()
-{
-	static int fnum = 0;
-	static int vid = 0;
-	if (!vid) {
-		system("mkdir ./vid");
-		vid = 1;
-	}
-	unsigned char *data = (unsigned char *)malloc(gl.xres * gl.yres * 3);
-    glReadPixels(0, 0, gl.xres, gl.yres, GL_RGB, GL_UNSIGNED_BYTE, data);
-	char ts[32];
-	sprintf(ts, "./vid/pic%03i.ppm", fnum);
-	FILE *fpo = fopen(ts,"w");	
-	if (fpo) {
-		fprintf(fpo, "P6\n%i %i\n255\n", gl.xres, gl.yres);
-		unsigned char *p = data;
-		//go backwards a row at a time...
-		p = p + ((gl.yres-1) * gl.xres * 3);
-		unsigned char *start = p;
-		for (int i=0; i<gl.yres; i++) {
-			for (int j=0; j<gl.xres*3; j++) {
-				fprintf(fpo, "%c",*p);
-				++p;
-			}
-			start = start - (gl.xres*3);
-			p = start;
-		}
-		fclose(fpo);
-		char s[256];
-		sprintf(s, "convert ./vid/pic%03i.ppm ./vid/pic%03i.gif", fnum, fnum);
-		system(s);
-		unlink(ts);
-	}
-	++fnum;
 }
 
 int checkKeys(XEvent *e)
 {
 	//keyboard input?
-	static int shift=0;
+	static int shift = 0;
 	if (e->type != KeyPress && e->type != KeyRelease)
 		return 0;
-	int key = XLookupKeysym(&e->xkey, 0); 
-	gl.keys[key]=1;
-	if (e->type == KeyRelease) {
-		gl.keys[key]=0;
+	int key = XLookupKeysym(&e->xkey, 0);
+	gl.keys[key] = 1;
+	if (e->type == KeyRelease)
+	{
+		gl.keys[key] = 0;
 		if (key == XK_Shift_L || key == XK_Shift_R)
-			shift=0;
+			shift = 0;
 		return 0;
 	}
-	gl.keys[key]=1;
-	if (key == XK_Shift_L || key == XK_Shift_R) {
-		shift=1;
+	gl.keys[key] = 1;
+	if (key == XK_Shift_L || key == XK_Shift_R)
+	{
+		shift = 1;
 		return 0;
 	}
 	(void)shift;
-	switch (key) {
-		 case XK_q:
-		 	gl.gameover = 1;
-		 	//resetGame(gl.gameover, gl.gameScore);
-		 	break;
-		case XK_s:
-			screenCapture();
-			break;
-		case XK_m:
-			gl.movie ^= 1;
-			break;
-		case XK_w:
-			timers.recordTime(&timers.walkTime);
-			gl.walk ^= 1;
-			break;
-		case XK_e:
-			gl.exp.pos[0] = 200.0;
-			gl.exp.pos[1] = -60.0;
-			gl.exp.pos[2] =   0.0;
-			timers.recordTime(&gl.exp.time);
-			gl.exp.onoff ^= 1;
-			break;
-		case XK_Left:
-			break;
-		case XK_f:
-			break;
-		case XK_Right:
-			break;
-		case XK_Up:
-			break;
-        case XK_c:
-            gl.creds ^= 1;
-            break;
-	    case XK_p:
-            gl.title ^= 1;
-			//sets game score back to zero 
-			//resetGame(gl.gameover, gl.gameScore); 
-            break;
-        case XK_Down:
-			break;
-		case XK_equal:
-			gl.delay -= 0.005;
-			if (gl.delay < 0.005)
-				gl.delay = 0.005;
-			break;
-		case XK_minus:
-			gl.delay += 0.005;
-			break;
-		case XK_plus:
-			gl.delay -= 0.005;
-			break;	
-        case XK_Escape:
-			return 1;
-			break;
+
+	switch (key)
+	{
+	case XK_q:
+		gl.gameover = 1;
+		//resetGame(gl.gameover, gl.gameScore);
+		break;
+	case XK_s:
+		break;
+	case XK_m:
+		gl.movie ^= 1;
+		break;
+	case XK_w:
+		timers.recordTime(&timers.walkTime);
+		gl.walk ^= 1;
+		break;
+	case XK_e:
+		break;
+	case XK_Left:
+		break;
+	case XK_f:
+		break;
+	case XK_Right:
+		break;
+	case XK_Up:
+		break;
+	case XK_c:
+		gl.creds ^= 1;
+		break;
+	case XK_p:
+		gl.title ^= 1;
+		break;
+	case XK_r:
+		restart();
+		break;
+	case XK_Down:
+		break;
+	case XK_equal:
+		gl.delay -= 0.005;
+		if (gl.delay < 0.005)
+			gl.delay = 0.005;
+		break;
+	case XK_minus:
+		gl.delay += 0.005;
+		break;
+	case XK_plus:
+		gl.delay -= 0.005;
+		break;
+	case XK_Escape:
+		return 1;
+		break;
 	}
 	return 0;
 }
@@ -775,8 +837,9 @@ Flt VecNormalize(Vec vec)
 	Flt xlen = vec[0];
 	Flt ylen = vec[1];
 	Flt zlen = vec[2];
-	len = xlen*xlen + ylen*ylen + zlen*zlen;
-	if (len == 0.0) {
+	len = xlen * xlen + ylen * ylen + zlen * zlen;
+	if (len == 0.0)
+	{
 		MakeVector(vec, 0.0, 0.0, 1.0);
 		return 1.0;
 	}
@@ -785,253 +848,149 @@ Flt VecNormalize(Vec vec)
 	vec[0] = xlen * tlen;
 	vec[1] = ylen * tlen;
 	vec[2] = zlen * tlen;
-	return(len);
+	return (len);
 }
 
 void physics(void)
 {
+	Flt d0, d1, dist;
+
 	if (gl.gameover)
-        return;
-    //to move backgriund when player is in motion 
-    //if(player in motion){
-    //  gl.walk.xc[0]
-    // 
-    //}
+		return;
+	//-------------------------
+	Monster *a = g.ahead;
+	while (a)
+	{
 
-	if (gl.walk || gl.keys[XK_Right] || gl.keys[XK_Left]) {
-		//man is walking...
-		//when time is up, advance the frame.
-		timers.recordTime(&timers.timeCurrent);
-		double timeSpan = timers.timeDiff(&timers.walkTime, &timers.timeCurrent);
-		if (timeSpan > gl.delay) {
-			//advance
-			++gl.walkFrame;
-			if (gl.walkFrame >= 16)
-				gl.walkFrame -= 16;
-			timers.recordTime(&timers.walkTime);
-		}
-		for (int i=0; i<20; i++) {
-			if (gl.keys[XK_Left]) {
-                //edit this to inscrease sprite speed
-                gl.scrollingTexture.xc[0] -= 0.0001;
-                gl.scrollingTexture.xc[1] -= 0.0001;
-				gl.box[i][0] += 1.0 * (0.05 / gl.delay);
-				if (gl.box[i][0] > gl.xres + 10.0)
-					gl.box[i][0] -= gl.xres + 10.0;
-				gl.camera[0] -= 2.0/lev.tilesize[0] * (0.05 / gl.delay);
-				if (gl.camera[0] < 0.0)
-					gl.camera[0] = 0.0;
-			} 
-           if(gl.keys[XK_Right]) {
-                gl.scrollingTexture.xc[0] += 0.0001;
-                gl.scrollingTexture.xc[1] += 0.0001;
-				gl.box[i][0] -= 1.0 * (0.05 / gl.delay);
-				if (gl.box[i][0] < -10.0)
-					gl.box[i][0] += gl.xres + 10.0;
-				gl.camera[0] += 2.0/lev.tilesize[0] * (0.05 / gl.delay);
-				if (gl.camera[0] < 0.0)
-					gl.camera[0] = 0.0;
+		a->pos[0] += a->vel[0];
+		a->pos[1] += a->vel[1];
+		if (gl.walk || gl.keys[XK_Right] || gl.keys[XK_Left])
+		{
+			//man is walking...
+			//when time is up, advance the frame.
+			timers.recordTime(&timers.timeCurrent);
+			double timeSpan = timers.timeDiff(&timers.walkTime, &timers.timeCurrent);
+			if (timeSpan > gl.delay)
+			{
+				//advance
+				++gl.walkFrame;
+				if (gl.walkFrame >= 16)
+					gl.walkFrame -= 16;
+				timers.recordTime(&timers.walkTime);
 			}
-            //
+			for (int i = 0; i < 20; i++)
+			{
+				if (gl.keys[XK_Left])
+				{
+					//edit this to inscrease sprite speed
+					if (!(g.Rowdy.pos[0] <= -450))
+					{
+						g.Rowdy.pos[0] -= g.Rowdy.vel[0] / 20;
+					}
+					if (!(g.radius.pos[0] <= 5))
+					{
+						g.radius.pos[0] += (g.radius.vel[0] - .45) / 20;
+					}
+					gl.scrollingTexture.xc[0] -= 0.00001;
+					gl.scrollingTexture.xc[1] -= 0.00001;
+					a->pos[0] += .1;
 
-           if(gl.keys[XK_Right] && gl.keys[XK_f]) {
-                gl.scrollingTexture.xc[0] += 0.001;
-                gl.scrollingTexture.xc[1] += 0.001;
-				gl.box[i][0] -= 1.0 * (0.05 / gl.delay);
-				if (gl.box[i][0] < -10.0)
-					gl.box[i][0] += gl.xres + 10.0;
-				gl.camera[0] += 2.0/lev.tilesize[0] * (0.05 / gl.delay);
-				if (gl.camera[0] < 0.0)
-					gl.camera[0] = 0.0;
-			}
+					if (gl.camera[0] < 0.0)
+						gl.camera[0] = 0.0;
+				}
+				if (gl.keys[XK_Right])
+				{
+					if ((g.Rowdy.pos[0] <= 20))
+					{
+						g.Rowdy.pos[0] += g.Rowdy.vel[0] / 20;
+					}
 
+					if ((g.radius.pos[0] <= gl.xres / 2))
+					{
+						g.radius.pos[0] -= (g.radius.vel[0] - .45) / 20;
+					}
+					gl.scrollingTexture.xc[0] += 0.00001;
+					gl.scrollingTexture.xc[1] += 0.00001;
+					a->pos[0] -= .1;
 
-           if(gl.keys[XK_Left] && gl.keys[XK_f]) {
-                gl.scrollingTexture.xc[0] -= 0.001;
-                gl.scrollingTexture.xc[1] -= 0.001;
-				gl.box[i][0] -= 1.0 * (0.05 / gl.delay);
-				if (gl.box[i][0] < -10.0)
-					gl.box[i][0] += gl.xres + 10.0;
-				gl.camera[0] += 2.0/lev.tilesize[0] * (0.05 / gl.delay);
-				if (gl.camera[0] < 0.0)
-					gl.camera[0] = 0.0;
-			}
-
-
-//
-		}
-		if (gl.exp.onoff) {
-			gl.exp.pos[0] -= 2.0 * (0.05 / gl.delay);
-		}
-		if (gl.exp44.onoff) {
-			gl.exp44.pos[0] -= 2.0 * (0.05 / gl.delay);
-		}
-	}
-	if (gl.exp.onoff) {
-		//explosion is happening
-		timers.recordTime(&timers.timeCurrent);
-		double timeSpan = timers.timeDiff(&gl.exp.time, &timers.timeCurrent);
-		if (timeSpan > gl.exp.delay) {
-			//advance explosion frame
-			++gl.exp.frame;
-			if (gl.exp.frame >= 23) {
-				//explosion is done.
-				gl.exp.onoff = 0;
-				gl.exp.frame = 0;
-			} else {
-				timers.recordTime(&gl.exp.time);
+					if (gl.camera[0] < 0.0)
+						gl.camera[0] = 0.0;
+				}
 			}
 		}
+
+		// while (a)
+		// {
+
+		if (a->pos[0] < -100.0)
+		{
+			a->pos[0] += (float)gl.xres + 200;
+		}
+		else if (a->pos[0] > (float)gl.xres + 100)
+		{
+			a->pos[0] -= (float)gl.xres + 200;
+		}
+		else if (a->pos[1] < -100.0)
+		{
+			a->pos[1] += (float)gl.yres + 200;
+		}
+		else if (a->pos[1] > (float)gl.yres + 100)
+		{
+			a->pos[1] -= (float)gl.yres + 200;
+		}
+
+		a = a->next;
 	}
-	if (gl.exp44.onoff) {
-		//explosion is happening
-		timers.recordTime(&timers.timeCurrent);
-		double timeSpan = timers.timeDiff(&gl.exp44.time, &timers.timeCurrent);
-		if (timeSpan > gl.exp44.delay) {
-			//advance explosion frame
-			++gl.exp44.frame;
-			if (gl.exp44.frame >= 16) {
-				//explosion is done.
-				gl.exp44.onoff = 0;
-				gl.exp44.frame = 0;
-			} else {
-				timers.recordTime(&gl.exp44.time);
+
+	//Monster collision with Sprite?
+	//If collision detected:
+	//     1. delete the MOnster
+	a = g.ahead;
+	while (a)
+	{
+		//is there a bullet within its radius?
+		int i = 0;
+		while (i < g.nMonsters)
+		{
+			Monster *a = &g.ahead[i];
+			d0 = a->pos[0] - g.radius.pos[0];
+			d1 = a->pos[1] - g.radius.pos[1];
+			dist = (d0 * d0 + d1 * d1);
+			//printf("Monster %f, Radius %f\n", a->pos[0], g.radius.pos[0]);
+			if ((dist / 100 < (a->radius * a->radius)))
+			{
+				//this Monster is hit
+				Monster *savea = a->next;
+				deleteMonster(&g, a);
+				a = savea;
+				g.nMonsters--;
+				gl.gameScore += 1;
+                playCoin();
+				//delete the Mosnter
 			}
+			i++;
 		}
+		// if (a == NULL)
+		// 	break;
+		a = a->next;
 	}
-	//====================================
-	//Adjust position of ball.
-	//Height of highest tile when ball is?
-	//====================================
-	Flt dd = lev.ftsz[0];
-	int col = (int)((gl.camera[0]+gl.ball_pos[0]) / dd);
-	col = col % lev.ncols;
-	int hgt = 0;
-	for (int i=0; i<lev.nrows; i++) {
-		if (lev.arr[i][col] != ' ') {
-			hgt = (lev.nrows-i) * lev.tilesize[1];
-			break;
-		}
-	}
-	if (gl.ball_pos[1] < (Flt)hgt) {
-		gl.ball_pos[1] = (Flt)hgt;
-		MakeVector(gl.ball_vel, 0, 0, 0);
-	} else {
-		gl.ball_vel[1] -= 0.9;
-	}
-	gl.ball_pos[1] += gl.ball_vel[1];
+	//---------------------------------------------
+	//-----------------------
 }
 
-
-void render(void)
+void renderSprite()
 {
-	
-	Rect r;
-	//Clear the screen
-	glClearColor(1.0, 1.0, 1.0, 1.0);
-	
-    glClear(GL_COLOR_BUFFER_BIT);
-    float cx = gl.xres/2.0;
-	float cy = gl.yres/2.0;
-    
-    //show background/////////////
-    show_background(gl.yres, gl.xres, gl.scrollingTexture.backTexture
-            ,gl.scrollingTexture.xc, gl.scrollingTexture.yc);
-
-
-	//
-	//========================
-	//Render the tile system
-	//========================
-	
-    int tx = lev.tilesize[0];
-	int ty = lev.tilesize[1];
-	Flt dd = lev.ftsz[0];
-	Flt offy = lev.tile_base;
-	int ncols_to_render = gl.xres / lev.tilesize[0] + 2;
-	int col = (int)(gl.camera[0] / dd);
-	col = col % lev.ncols;
-	//Partial tile offset must be determined here.
-	//The leftmost tile might be partially off-screen.
-	//cdd: camera position in terms of tiles.
-	Flt cdd = gl.camera[0] / dd;
-	//flo: just the integer portion
-	Flt flo = floor(cdd);
-	//dec: just the decimal portion
-	Flt dec = (cdd - flo);
-	//offx: the offset to the left of the screen to start drawing tiles
-	Flt offx = -dec * dd;
-	//Log("gl.camera[0]: %lf   offx: %lf\n",gl.camera[0],offx);
-	for (int j=0; j<ncols_to_render; j++) {
-		int row = lev.nrows-1;
-		for (int i=0; i<lev.nrows; i++) {
-			if (lev.arr[row][col] == 'w') {
-				glColor3f(0.8, 0.8, 0.6);
-				glPushMatrix();
-				//put tile in its place
-				glTranslated((Flt)j*dd+offx, (Flt)i*lev.ftsz[1]+offy, 0);
-				glBegin(GL_QUADS);
-					glVertex2i( 0,  0);
-					glVertex2i( 0, ty);
-					glVertex2i(tx, ty);
-					glVertex2i(tx,  0);
-				glEnd();
-				glPopMatrix();
-			}
-			if (lev.arr[row][col] == 'b') {
-				glColor3f(0.9, 0.2, 0.2);
-				glPushMatrix();
-				glTranslated((Flt)j*dd+offx, (Flt)i*lev.ftsz[1]+offy, 0);
-				glBegin(GL_QUADS);
-					glVertex2i( 0,  0);
-					glVertex2i( 0, ty);
-					glVertex2i(tx, ty);
-					glVertex2i(tx,  0);
-				glEnd();
-				glPopMatrix();
-			}
-			--row;
-		}
-		col = (col+1) % lev.ncols;
-	}
-	glColor3f(1.0, 1.0, 0.1);
-	glPushMatrix();
-	//put ball in its place
-	glTranslated(gl.ball_pos[0], lev.tile_base+gl.ball_pos[1], 0);
-	glBegin(GL_QUADS);
-		glVertex2i(-10, 0);
-		glVertex2i(-10, 20);
-		glVertex2i( 10, 20);
-		glVertex2i( 10, 0);
-	glEnd();
-	glPopMatrix();
-    
-	//--------------------------------------
-	//
-	//#define SHOW_FAKE_SHADOW
-	#ifdef SHOW_FAKE_SHADOW
-	glColor3f(0.25, 0.25, 0.25);
-	glBegin(GL_QUADS);
-		glVertex2i(cx-60, 150);
-		glVertex2i(cx+50, 150);
-		glVertex2i(cx+50, 130);
-		glVertex2i(cx-60, 130);
-	glEnd();
-	#endif
-	
-    //
-	//
-    
-    float h = 200.0;
+	float cx = gl.xres / 2.0;
+	float cy = gl.yres / 2.0;
+	float h = 200.0;
 	float w = h * 0.5;
-	
-    glPushMatrix();
+	glPushMatrix();
 	glColor3f(1.0, 1.0, 1.0);
-	glBindTexture(GL_TEXTURE_2D, gl.walkTexture);
-	//
+	glBindTexture(GL_TEXTURE_2D, g.Rowdy.tex);
 	glEnable(GL_ALPHA_TEST);
+	glTranslatef(g.Rowdy.pos[0], g.Rowdy.pos[1], g.Rowdy.pos[2]);
 	glAlphaFunc(GL_GREATER, 0.0f);
-	glColor4ub(255,255,255,255);
+	glColor4ub(255, 255, 255, 255);
 	int ix = gl.walkFrame % 8;
 	int iy = 0;
 	if (gl.walkFrame >= 8)
@@ -1039,22 +998,34 @@ void render(void)
 	float fx = (float)ix / 8.0;
 	float fy = (float)iy / 2.0;
 	glBegin(GL_QUADS);
-		if (gl.keys[XK_Left]) {
-			glTexCoord2f(fx+.125, fy+.5); glVertex2i(cx-w, cy-h);
-			glTexCoord2f(fx+.125, fy);    glVertex2i(cx-w, cy+h);
-			glTexCoord2f(fx,      fy);    glVertex2i(cx+w, cy+h);
-			glTexCoord2f(fx,      fy+.5); glVertex2i(cx+w, cy-h);
-		} else {
-			glTexCoord2f(fx,      fy+.5); glVertex2i(cx-w, cy-h);
-			glTexCoord2f(fx,      fy);    glVertex2i(cx-w, cy+h);
-			glTexCoord2f(fx+.125, fy);    glVertex2i(cx+w, cy+h);
-			glTexCoord2f(fx+.125, fy+.5); glVertex2i(cx+w, cy-h);
-		}
+	if (gl.keys[XK_Left])
+	{
+		glTexCoord2f(fx + .125, fy + .5);
+		glVertex2i(cx - w, cy - h);
+		glTexCoord2f(fx + .125, fy);
+		glVertex2i(cx - w, cy + h);
+		glTexCoord2f(fx, fy);
+		glVertex2i(cx + w, cy + h);
+		glTexCoord2f(fx, fy + .5);
+		glVertex2i(cx + w, cy - h);
+	}
+	else
+	{
+		glTexCoord2f(fx, fy + .5);
+		glVertex2i(cx - w, cy - h);
+		glTexCoord2f(fx, fy);
+		glVertex2i(cx - w, cy + h);
+		glTexCoord2f(fx + .125, fy);
+		glVertex2i(cx + w, cy + h);
+		glTexCoord2f(fx + .125, fy + .5);
+		glVertex2i(cx + w, cy - h);
+	}
 	glEnd();
-	glPopMatrix();
+	// glPopMatrix();
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_ALPHA_TEST);
 
+<<<<<<< HEAD
     if (gl.exp.onoff) {
         h = 80.0;
         w = 80.0;
@@ -1080,70 +1051,180 @@ void render(void)
         glDisable(GL_ALPHA_TEST); 
     }
     
+=======
+	// glPushMatrix();
+	glColor3ub(255, 215, 0);
 
-	unsigned int c = 0x00ffff44;
+	int n = 10;
+	float ang = 0.0;
+	float inc = (3.14159 * 2.0) / (float)n;
+	float pts[100][2];
+	for (int i = 0; i < n; i++)
+	{
+		pts[i][0] = cos(ang) * 100;
+		pts[i][1] = sin(ang) * 100;
+		ang += inc;
+	}
+	for (int i = 0; i < n; i++)
+	{
+
+		int j = (i + 1) % n;
+		glBegin(GL_LINES);
+		glVertex2f(pts[i][0], pts[i][1]);
+		glVertex2f(pts[j][0], pts[j][1]);
+		glEnd();
+	}
+	glPopMatrix();
+}
+>>>>>>> b47dc063ddcaf1a6fa1a217479cfb9324cf5642e
+
+void renderScreenText()
+{
+	Rect r;
+	unsigned int c = 0x00FF5733;
 	r.bot = gl.yres - 20;
 	r.left = 10;
 	r.center = 0;
-	ggprint8b(&r, 16, c, "E   Explosion");
+	//ggprint8b(&r, 16, c, "E   Explosion");
 	ggprint8b(&r, 16, c, "+   faster");
 	ggprint8b(&r, 16, c, "-   slower");
 	ggprint8b(&r, 16, c, "right arrow -> walk right");
-	ggprint8b(&r, 16, c, "right arrow + f -> walk faster");
 	ggprint8b(&r, 16, c, "left arrow  <- walk left");
-	ggprint8b(&r, 16, c, "frame: %i", gl.walkFrame);
-	ggprint8b(&r, 16, c, "Press C for credits");
-	ggprint8b(&r, 16, c, "Game Score: %i", gl.gameScore);
-	ggprint8b(&r, 16, c, "Press Q to quit");
-	
-    
+	ggprint8b(&r, 16, c, "Press c for credits");
+	ggprint8b(&r, 16, c, "Press q to quit or r to restart");
 
-    
-    if(!gl.title){
-    glColor3f(0.0,0.0,1.0);
-    glBegin(GL_QUADS);
-		glVertex2i(-gl.xres, gl.yres);
-		glVertex2i(-gl.xres, -gl.yres);
-		glVertex2i( gl.xres, -gl.yres);
-		glVertex2i( gl.xres, gl.yres);
-	glEnd();
-	glPopMatrix();
-        show_title(gl.yres, gl.xres, gl.backgroundTexture);
-    } 
-
-	  if(gl.gameover){
-    glColor3f(0.0,0.0,1.0);
-    glBegin(GL_QUADS);
-		glVertex2i(-gl.xres, gl.yres);
-		glVertex2i(-gl.xres, -gl.yres);
-		glVertex2i( gl.xres, -gl.yres);
-		glVertex2i( gl.xres, gl.yres);
-	glEnd();
-	glPopMatrix();
-        show_title(gl.yres, gl.xres, gl.gameOverText);
-    } 
-
-    //credit screen 
-    if(gl.creds){
-    glColor3f(0.0,0.0,0.0);
-    glBegin(GL_QUADS);
-		glVertex2i(-gl.xres, gl.yres);
-		glVertex2i(-gl.xres, -gl.yres);
-		glVertex2i( gl.xres, -gl.yres);
-		glVertex2i( gl.xres, gl.yres);
-	glEnd();
-	glPopMatrix();
-        show_my_creds(gl.yres / 2, gl.xres / 2);
-        show_ed_creds((gl.yres / 2) + 15 , gl.xres / 2);
-        show_diego_creds((gl.yres / 2) + 30 , gl.xres / 2);
-        show_javier_creds((gl.yres / 2) + 45 , gl.xres / 2);
-    }
-
+	r.bot = gl.yres - 20;
+	r.left = gl.xres / 2;
+	r.center = 0;
+	ggprint16(&r, 16, 0x0000FF, "GAME SCORE: %i", gl.gameScore);
 }
 
+void renderTitleScreen()
+{
+	glPushMatrix();
+	glColor3f(0.0, 0.0, 1.0);
+	glBegin(GL_QUADS);
+	glVertex2i(-gl.xres, gl.yres);
+	glVertex2i(-gl.xres, -gl.yres);
+	glVertex2i(gl.xres, -gl.yres);
+	glVertex2i(gl.xres, gl.yres);
+	glEnd();
+	glPopMatrix();
+	show_title(gl.yres, gl.xres, gl.backgroundTexture);
+	//playSound();
+}
 
+void renderGameOverScreen()
+{
+	glPushMatrix();
+	glColor3f(0.0, 0.0, 1.0);
+	glBegin(GL_QUADS);
+	glVertex2i(-gl.xres, gl.yres);
+	glVertex2i(-gl.xres, -gl.yres);
+	glVertex2i(gl.xres, -gl.yres);
+	glVertex2i(gl.xres, gl.yres);
+	glEnd();
+	glPopMatrix();
+	show_title(gl.yres, gl.xres, gl.gameOverText);
+}
 
+void renderCredits()
+{
+	glPushMatrix();
+	glColor3f(0.0, 0.0, 0.0);
+	glBegin(GL_QUADS);
+	glVertex2i(-gl.xres, gl.yres);
+	glVertex2i(-gl.xres, -gl.yres);
+	glVertex2i(gl.xres, -gl.yres);
+	glVertex2i(gl.xres, gl.yres);
+	glEnd();
+	glPopMatrix();
+	show_my_creds(gl.yres / 2, gl.xres / 2);
+	show_ed_creds((gl.yres / 2) + 15, gl.xres / 2);
+	show_diego_creds((gl.yres / 2) + 30, gl.xres / 2);
+	show_javier_creds((gl.yres / 2) + 45, gl.xres / 2);
+}
 
+void renderMonsters()
+{
+	Monster *a = g.ahead;
+	while (a)
+	{
+		//Log("draw Monster...\n");
+		glPushMatrix();
+		glColor3fv(a->color);
+		glTranslatef(a->pos[0], a->pos[1], a->pos[2]);
+		//glBegin(GL_LINE_LOOP);
+		for (int i = 0; i < a->nverts; i++)
+		{
+			glBegin(GL_LINE_LOOP);
+			int j = (i + 1) % a->nverts;
+			glVertex2f(a->pts[i][0], a->pts[i][1]);
+			glVertex2f(a->pts[j][0], a->pts[j][1]);
+			glEnd();
+		}
+		glPopMatrix();
+		a = a->next;
+	}
+}
 
+void renderSpriteRadius()
+{
+	glPushMatrix();
+	glColor3ub(255, 255, 2);
+	int n = 10;
+	float ang = 0.0;
+	float inc = (3.14159 * 2.0) / (float)n;
+	float pts[100][2];
+	for (int i = 0; i < n; i++)
+	{
+		pts[i][0] = cos(ang) * 100;
+		pts[i][1] = sin(ang) * 200;
+		ang += inc;
+	}
+	glTranslatef(g.radius.pos[0], g.radius.pos[1], 0);
+	for (int i = 0; i < n; i++)
+	{
 
+		int j = (i + 1) % n;
+		glBegin(GL_LINE_LOOP);
+		glVertex2f(pts[i][0], pts[i][1]);
+		glVertex2f(pts[j][0], pts[j][1]);
+		glEnd();
+	}
+	glPopMatrix();
+}
 
+void render(void)
+{
+	show_background(gl.yres, gl.xres, gl.scrollingTexture.backTexture, gl.scrollingTexture.xc, gl.scrollingTexture.yc);
+	renderSprite();
+	renderScreenText();
+	renderMonsters();
+	renderSpriteRadius();
+
+	if (!gl.title)
+	{
+		renderTitleScreen();
+	}
+	if (gl.gameover)
+	{
+		renderGameOverScreen();
+	}
+	if (gl.creds)
+	{
+		renderCredits();
+	}
+}
+
+void restart()
+{
+	g.gameReset();
+	glClearColor(1.0, 1.0, 1.0, 1.0);
+	cleanSound();
+	gl.gameover = 0;
+	gl.gameScore = 0;
+	gl.quit = 0;
+	gl.titleSound = 1;
+	gl.title ^= 1;
+}

@@ -34,12 +34,12 @@ void show_javier_creds(int n, int m) {
 
 /*
  * play_sound must be called in physics when the bird hits coin
- * must be called in physics like -> play_sound(gl.alBufferCoin);
+ * must be called in like -> play_sound(gl.alBuffer);
  * 
 */
 
 
-void play_sound(){
+void playSound(){
         //Get started right here.
 #ifdef USE_OPENAL_SOUND
         alutInit(0, NULL);
@@ -59,21 +59,24 @@ void play_sound(){
         alListenerfv(AL_ORIENTATION, vec);
         alListenerf(AL_GAIN, 1.0f);
         //
-        //alBufferCoin holds the sound information.
-        alBuffer = alutCreateBufferFromFile("./coin.wav");
+        //alBuffer holds the sound information.
+        alBuffer = alutCreateBufferFromFile("./theme.wav");
         //
         //Source refers to the sound.
         //Generate a source, and store it in a buffer.
         alGenSources(1, &alSource);
         alSourcei(alSource, AL_BUFFER, alBuffer);
-        //Set volume and pitch to normal, no looping of sound.
+        //Set volume and pitch to normal, ensure looping of sound.
         alSourcef(alSource, AL_GAIN, 1.0f);
         alSourcef(alSource, AL_PITCH, 1.0f);
-        alSourcei(alSource, AL_LOOPING, AL_FALSE);
-        for (int i=0; i<4; i++) {
+        alSourcei(alSource, AL_LOOPING, AL_TRUE);
+        /*for (int i=0; i<4; i++) {
                 alSourcePlay(alSource);
                 usleep(250000);
-        }
+        }*/
+
+	alSourcePlay(alSource);	
+
 	if (alGetError() != AL_NO_ERROR) {
 		printf("ERROR: setting source\n");
 		return;
@@ -81,7 +84,7 @@ void play_sound(){
 #endif //USE_OPENAL_SOUND
 }
 
-void clean_sound(){
+void cleanSound(){
 	
 	#ifdef USE_OPENAL_SOUND
         //Cleanup.
