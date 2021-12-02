@@ -125,6 +125,7 @@ public:
 	GLuint backgroundTexture;
 	GLuint gameOverText;
 	Texture scrollingTexture;
+    GLuint creditTexture; 
 
 	//camera is centered at (0,0) lower-left of screen.
 	Flt camera[2];
@@ -511,13 +512,14 @@ public:
 			unlink(ppmname);
 	}
 };
-Image img[6] = {
+Image img[7] = {
 	"./images/walk.gif",
 	"./images/fireBall.png",
 	"./images/titleScreen.png",
 	"./images/scrollingBackground.jpg",
 	"./images/gameOver.jpg",
-	"./images/coin8bit.png"};
+	"./images/coin8bit.png",
+    "./images/creditScreen.png"};
 
 int main(void)
 {
@@ -608,6 +610,18 @@ void initOpengl(void)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, img[2].data);
 	//-------------------------------------------
+
+    //Credit Screen Set-up
+    glGenTextures(1, &gl.creditTexture);
+	w = img[6].width;
+	h = img[6].height;
+
+	glBindTexture(GL_TEXTURE_2D, gl.creditTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, img[6].data);
+	//-------------------------------------------
+
 
 	//Game Over Screen
 	glGenTextures(1, &gl.gameOverText);
@@ -1061,11 +1075,14 @@ void renderCredits()
 	glVertex2i(gl.xres, gl.yres);
 	glEnd();
 	glPopMatrix();
-	show_my_creds(gl.yres / 2, gl.xres / 2);
+	show_title(gl.yres, gl.xres, gl.creditTexture);
+	//old credits
+    /*show_my_creds(gl.yres / 2, gl.xres / 2);
 	show_ed_creds((gl.yres / 2) + 15, gl.xres / 2);
 	show_diego_creds((gl.yres / 2) + 30, gl.xres / 2);
 	show_javier_creds((gl.yres / 2) + 45, gl.xres / 2);
-}
+    */
+    }
 
 void renderMonsters()
 {
@@ -1135,8 +1152,8 @@ void render(void)
 	}
 	if (gl.creds)
 	{
-		renderCredits();
-	}
+	   renderCredits(); 
+    }
 }
 
 void restart()
