@@ -125,7 +125,7 @@ public:
 	GLuint backgroundTexture;
 	GLuint gameOverText;
 	Texture scrollingTexture;
-    GLuint creditTexture; 
+	GLuint creditTexture;
 
 	//camera is centered at (0,0) lower-left of screen.
 	Flt camera[2];
@@ -258,49 +258,50 @@ public:
 	}
 } g;
 
-void Game::gameReset(){
-ahead = NULL;
-		nCoins = 0;
-		Rowdy.image = NULL;
-		Rowdy.pos[0] = -340;
-		Rowdy.pos[1] = -150;
-		Rowdy.vel[0] = (Flt)(rnd() * 2.0 - 1.0);
-		//build 10 Monsters...
-		radius.pos[0] = gl.xres / 5 - 45;
-		radius.pos[1] = gl.yres / 5 + 35;
-		radius.vel[0] = (Flt)(rnd() * 2.0 - 1.0);
-		for (int j = 0; j < 10; j++)
+void Game::gameReset()
+{
+	ahead = NULL;
+	nCoins = 0;
+	Rowdy.image = NULL;
+	Rowdy.pos[0] = -340;
+	Rowdy.pos[1] = -150;
+	Rowdy.vel[0] = (Flt)(rnd() * 2.0 - 1.0);
+	//build 10 Monsters...
+	radius.pos[0] = gl.xres / 5 - 45;
+	radius.pos[1] = gl.yres / 5 + 35;
+	radius.vel[0] = (Flt)(rnd() * 2.0 - 1.0);
+	for (int j = 0; j < 10; j++)
+	{
+		Coin *a = new Coin;
+		a->nverts = 10;
+		a->radius = 15;
+		float angle = 0.0;
+		Flt inc = (PI * 2.0) / (float)a->nverts;
+		for (int i = 0; i < a->nverts; i++)
 		{
-			Coin *a = new Coin;
-			a->nverts = 10;
-			a->radius = 15;
-			float angle = 0.0;
-			Flt inc = (PI * 2.0) / (float)a->nverts;
-			for (int i = 0; i < a->nverts; i++)
-			{
-				a->pts[i][0] = cos(angle) * a->radius;
-				a->pts[i][1] = sin(angle) * a->radius;
-				angle += inc;
-			}
-			a->pos[0] = (Flt)(rand() % gl.xres);
-			a->pos[1] = (Flt)(rand() % gl.yres);
-			a->pos[2] = 0.0f;
-			a->angle = 0.0;
-			a->color[0] = 35;
-			a->color[1] = 86;
-			a->color[2] = 158;
-			a->vel[0] = (Flt)(rnd() * 2.0 - 1.0);
-			a->vel[1] = (Flt)(rnd() * 2.0 - 1.0);
-			//add to front of linked list
-			a->next = ahead;
-			if (ahead != NULL)
-				ahead->prev = a;
-			ahead = a;
-			++nCoins;
+			a->pts[i][0] = cos(angle) * a->radius;
+			a->pts[i][1] = sin(angle) * a->radius;
+			angle += inc;
 		}
+		a->pos[0] = (Flt)(rand() % gl.xres);
+		a->pos[1] = (Flt)(rand() % gl.yres);
+		a->pos[2] = 0.0f;
+		a->angle = 0.0;
+		a->color[0] = 35;
+		a->color[1] = 86;
+		a->color[2] = 158;
+		a->vel[0] = (Flt)(rnd() * 2.0 - 1.0);
+		a->vel[1] = (Flt)(rnd() * 2.0 - 1.0);
+		//add to front of linked list
+		a->next = ahead;
+		if (ahead != NULL)
+			ahead->prev = a;
+		ahead = a;
+		++nCoins;
+	}
 }
 
-void deleteMonster(Game *g, Coin *node)
+void deleteCoin(Game *g, Coin *node)
 {
 	//Remove a node from doubly-linked list
 	//Must look at 4 special cases below.
@@ -334,32 +335,6 @@ void deleteMonster(Game *g, Coin *node)
 	}
 	delete node;
 	node = NULL;
-};
-
-//This builds new Coin
-void buildMonsterFragment(Coin *ta, Coin *a)
-{
-	//build ta from a
-	ta->nverts = 4;
-	ta->radius = a->radius / 2.0;
-	Flt r2 = ta->radius / 2.0;
-	Flt angle = 0.0f;
-	Flt inc = (PI * 2.0) / (Flt)ta->nverts;
-	for (int i = 0; i < ta->nverts; i++)
-	{
-		ta->pts[i][0] = sin(angle) * (r2 + rnd() * ta->radius);
-		ta->pts[i][1] = cos(angle) * (r2 + rnd() * ta->radius);
-		angle += inc;
-	}
-	ta->pos[0] = a->pos[0] + rnd() * 10.0 - 5.0;
-	ta->pos[1] = a->pos[1] + rnd() * 10.0 - 5.0;
-	ta->pos[2] = 0.0f;
-	ta->angle = 0.0;
-	ta->color[0] = 0.5;
-	ta->color[1] = 0.5;
-	ta->color[2] = 0.5;
-	ta->vel[0] = a->vel[0] + (rnd() * 2.0 - 1.0);
-	ta->vel[1] = a->vel[1] + (rnd() * 2.0 - 1.0);
 };
 
 //X Windows variables
@@ -519,7 +494,7 @@ Image img[7] = {
 	"./images/scrollingBackground.jpg",
 	"./images/gameOver.jpg",
 	"./images/coin8bit.png",
-    "./images/creditScreen.png"};
+	"./images/creditScreen.png"};
 
 int main(void)
 {
@@ -610,8 +585,8 @@ void initOpengl(void)
 	glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, img[2].data);
 	//-------------------------------------------
 
-    //Credit Screen Set-up
-    glGenTextures(1, &gl.creditTexture);
+	//Credit Screen Set-up
+	glGenTextures(1, &gl.creditTexture);
 	w = img[6].width;
 	h = img[6].height;
 
@@ -620,7 +595,6 @@ void initOpengl(void)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, img[6].data);
 	//-------------------------------------------
-
 
 	//Game Over Screen
 	glGenTextures(1, &gl.gameOverText);
@@ -920,22 +894,21 @@ void physics(void)
 			d0 = a->pos[0] - g.radius.pos[0];
 			d1 = a->pos[1] - g.radius.pos[1];
 			dist = (d0 * d0 + d1 * d1);
-			
+
 			if ((dist / 100 < (a->radius * a->radius)))
 			{
 				//this Coin is hit
 				Coin *savea = a->next;
 				//delete the coin
-				deleteMonster(&g, a);
+				deleteCoin(&g, a);
 				a = savea;
 				g.nCoins--;
 				gl.gameScore += 1;
-                playCoin();
-				
+				playCoin();
 			}
 			i++;
 		}
-		
+
 		a = a->next;
 	}
 }
@@ -1075,14 +1048,14 @@ void renderCredits()
 	glPopMatrix();
 	show_title(gl.yres, gl.xres, gl.creditTexture);
 	//old credits
-    /*show_my_creds(gl.yres / 2, gl.xres / 2);
+	/*show_my_creds(gl.yres / 2, gl.xres / 2);
 	show_ed_creds((gl.yres / 2) + 15, gl.xres / 2);
 	show_diego_creds((gl.yres / 2) + 30, gl.xres / 2);
 	show_javier_creds((gl.yres / 2) + 45, gl.xres / 2);
     */
-    }
+}
 
-void renderMonsters()
+void renderCoins()
 {
 	Coin *a = g.ahead;
 	while (a)
@@ -1137,7 +1110,7 @@ void render(void)
 	show_background(gl.yres, gl.xres, gl.scrollingTexture.backTexture, gl.scrollingTexture.xc, gl.scrollingTexture.yc);
 	renderSprite();
 	renderScreenText();
-	renderMonsters();
+	renderCoins();
 	renderSpriteRadius();
 
 	if (!gl.title)
@@ -1150,14 +1123,13 @@ void render(void)
 	}
 	if (gl.creds)
 	{
-	   renderCredits(); 
-    }
-	
+		renderCredits();
+	}
 }
 
 void restart()
 {
-	cleanSound(); 
+	cleanSound();
 	g.gameReset();
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 	gl.gameover = 0;
